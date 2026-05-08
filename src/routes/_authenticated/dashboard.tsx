@@ -2,16 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { fetchEtsyOrders } from "@/lib/etsy.functions";
+import { fetchEtsyOrders } from "@/lib/ai.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { 
   TrendingUp, Wand2, Image as ImageIcon, ArrowRight, 
   ShoppingCart, DollarSign, Package, Sparkles, Search,
-  ShoppingBag, Palette, Megaphone, Users, ArrowUpRight, BarChart3
+  ShoppingBag, Palette, Megaphone, Users, ArrowUpRight, BarChart3,
+  Bell, Zap, Crown, Target, Activity
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -57,171 +58,173 @@ function DashboardPage() {
   }, [user]);
 
   const QUICK_ACTIONS = [
-    { title: "Trend Keşfet", desc: "Satan nişleri bul", icon: TrendingUp, href: "/trends", color: "bg-blue-500/10 text-blue-500" },
-    { title: "Tasarım Üret", desc: "AI ile sanat yarat", icon: Palette, href: "/generate", color: "bg-purple-500/10 text-purple-500" },
-    { title: "Pazarlama Yap", desc: "Sosyal medyada paylaş", icon: Megaphone, href: "/marketing", color: "bg-orange-500/10 text-orange-500" },
-    { title: "Envanter", desc: "Ürünlerini yönet", icon: Package, href: "/inventory", color: "bg-green-500/10 text-green-500" },
-  ];
-
-  const statCards = [
-    { label: "Toplam Satış", value: stats.sales, icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-500/10", change: "+12%" },
-    { label: "Tahmini Gelir", value: `${stats.revenue} TL`, icon: DollarSign, color: "text-green-500", bg: "bg-green-500/10", change: "+8%" },
-    { label: "Üretilen Tasarım", value: stats.designs, icon: Palette, color: "text-purple-500", bg: "bg-purple-500/10", change: "+5" },
-    { label: "Trend Araması", value: stats.trends, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-500/10", change: "Aktif" },
+    { title: "Trend Radar", desc: "Karlı nişleri keşfet", icon: TrendingUp, href: "/trends", color: "text-blue-500", bg: "bg-blue-500/10" },
+    { title: "AI Atölye", desc: "Yeni tasarımlar üret", icon: Wand2, href: "/generate", color: "text-purple-500", bg: "bg-purple-500/10" },
+    { title: "Marketing", desc: "Sosyal medya otomasyonu", icon: Megaphone, href: "/marketing", color: "text-pink-500", bg: "bg-pink-500/10" },
+    { title: "Analitik", desc: "Satış verilerini incele", icon: BarChart3, href: "/orders", color: "text-green-500", bg: "bg-green-500/10" },
   ];
 
   return (
-    <div className="space-y-8 pb-10 animate-in fade-in duration-500">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Hoş geldin, {profile?.display_name || "Satıcı"} 👋</h1>
-          <p className="mt-1 text-muted-foreground">Mağazanın bugünkü performansına ve AI önerilerine göz at.</p>
-        </div>
-        <Link to="/generate">
-           <Button className="gap-2 shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-             <Sparkles className="h-4 w-4" /> Yeni Tasarım Başlat
-           </Button>
-        </Link>
-      </div>
+    <div className="space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      {/* ── TOP HERO SECTION ── */}
+      <section className="relative overflow-hidden rounded-[3rem] bg-foreground px-8 py-12 text-background shadow-2xl">
+         <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
+         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-primary/5 blur-[80px]" />
+         
+         <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-4">
+               <div className="flex items-center gap-2">
+                  <Badge className="bg-primary/20 text-primary border-none font-black text-[10px] uppercase tracking-widest px-3">
+                     Elite Satıcı Paneli
+                  </Badge>
+                  {profile?.plan === 'PRO' && <Crown className="h-4 w-4 text-yellow-500 animate-bounce" />}
+               </div>
+               <h1 className="text-4xl font-black tracking-tighter sm:text-6xl uppercase italic">
+                  Merhaba, <span className="text-primary">{profile?.display_name || "Satıcı"}</span>
+               </h1>
+               <p className="max-w-md text-sm font-bold opacity-70 italic leading-relaxed">
+                  Lumina Seller ile bugün toplam <span className="text-primary font-black underline">₺{stats.revenue}</span> kazandınız. 
+                  Yapay zeka mağazanız için 3 yeni trend keşfetti.
+               </p>
+            </div>
+            
+            <div className="flex flex-wrap gap-4">
+               <Button asChild size="lg" className="h-14 rounded-2xl bg-primary px-8 font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                  <Link to="/generate"><Sparkles className="mr-2 h-5 w-5" /> Tasarım Başlat</Link>
+               </Button>
+               <Button variant="outline" size="lg" className="h-14 rounded-2xl border-white/10 bg-white/5 px-8 font-black uppercase tracking-widest text-white hover:bg-white/10">
+                  <Link to="/trends">Trendleri Tara</Link>
+               </Button>
+            </div>
+         </div>
+      </section>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((s, i) => (
-          <Card key={i} className="overflow-hidden border-none bg-card/50 shadow-sm backdrop-blur-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{s.label}</p>
-                  <h3 className="mt-1 text-2xl font-bold">{s.value}</h3>
+      {/* ── STATS GRID ── */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+         {[
+           { label: "Canlı Satışlar", value: stats.sales, icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-500/5" },
+           { label: "Net Kazanç", value: `₺${stats.revenue}`, icon: DollarSign, color: "text-green-500", bg: "bg-green-500/5" },
+           { label: "Aktif Tasarım", value: stats.designs, icon: Palette, color: "text-purple-500", bg: "bg-purple-500/5" },
+           { label: "AI Kredi", value: profile?.credits || 0, icon: Zap, color: "text-yellow-500", bg: "bg-yellow-500/5" },
+         ].map((s, i) => (
+           <Card key={i} className="group border-none bg-card/50 shadow-sm backdrop-blur-md hover:shadow-2xl transition-all duration-500 rounded-[2rem] overflow-hidden">
+             <CardContent className="p-8">
+                <div className={`mb-6 h-12 w-12 rounded-2xl ${s.bg} flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-6`}>
+                   <s.icon className={`h-6 w-6 ${s.color}`} />
                 </div>
-                <div className={`rounded-xl p-3 ${s.bg}`}>
-                  <s.icon className={`h-5 w-5 ${s.color}`} />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{s.label}</p>
+                <h3 className="mt-2 text-4xl font-black tracking-tighter">{s.value}</h3>
+                <div className="mt-4 h-1 w-full bg-muted rounded-full overflow-hidden">
+                   <div className={`h-full ${s.bg.replace('/5', '')} animate-pulse`} style={{ width: '65%' }} />
                 </div>
-              </div>
-              <div className="mt-4 flex items-center gap-1 text-[10px] font-bold text-green-500">
-                <ArrowUpRight className="h-3 w-3" /> {s.change} <span className="text-muted-foreground ml-1 font-normal">geçen haftaya göre</span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+             </CardContent>
+           </Card>
+         ))}
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Quick Actions */}
-          <section>
-            <h2 className="mb-4 text-lg font-bold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" /> Hızlı İşlemler
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {QUICK_ACTIONS.map((action, i) => (
-                <Link key={i} to={action.href}>
-                  <Card className="border-border/50 transition-all hover:scale-[1.02] hover:border-primary/50 hover:shadow-xl cursor-pointer overflow-hidden group">
-                    <CardContent className="p-5 flex items-center gap-4">
-                      <div className={`rounded-2xl p-4 transition-colors group-hover:bg-primary group-hover:text-primary-foreground ${action.color}`}>
-                         <action.icon className="h-7 w-7" />
-                      </div>
-                      <div>
-                         <h3 className="font-bold text-base">{action.title}</h3>
-                         <p className="text-xs text-muted-foreground">{action.desc}</p>
-                      </div>
-                      <ArrowRight className="ml-auto h-5 w-5 text-muted-foreground/30 group-hover:text-primary transition-colors" />
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </section>
+         {/* ── MAIN CONTENT ── */}
+         <div className="lg:col-span-2 space-y-10">
+            {/* Quick Actions */}
+            <section className="space-y-6">
+               <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-black uppercase tracking-tighter italic flex items-center gap-2">
+                     <Target className="h-5 w-5 text-primary" /> Hızlı Erişim
+                  </h2>
+               </div>
+               <div className="grid gap-4 sm:grid-cols-2">
+                  {QUICK_ACTIONS.map((action, i) => (
+                    <Link key={i} to={action.href} className="group">
+                       <div className="flex items-center gap-4 rounded-[2rem] border border-border/50 bg-card p-6 transition-all duration-500 hover:border-primary/40 hover:shadow-2xl hover:-translate-y-1">
+                          <div className={`h-16 w-16 rounded-[1.5rem] ${action.bg} flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all`}>
+                             <action.icon className="h-8 w-8" />
+                          </div>
+                          <div className="flex-1">
+                             <h3 className="font-black text-lg uppercase tracking-tight">{action.title}</h3>
+                             <p className="text-[10px] font-bold text-muted-foreground italic">{action.desc}</p>
+                          </div>
+                          <ArrowRight className="h-5 w-5 opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
+                       </div>
+                    </Link>
+                  ))}
+               </div>
+            </section>
 
-          {/* Recent Designs */}
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">Son Tasarımlar</h2>
-              <Link to="/gallery" className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
-                Tümünü Gör <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            {loading ? (
-              <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-                {[1, 2, 3, 4, 5, 6].map(i => <div key={i} className="aspect-square animate-pulse rounded-xl bg-card" />)}
-              </div>
-            ) : recent.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border bg-card/30 p-12 text-center">
-                <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground/20" />
-                <p className="mt-4 text-sm text-muted-foreground">Henüz bir tasarım üretmedin.</p>
-                <Button asChild variant="outline" size="sm" className="mt-4">
-                  <Link to="/generate">Hemen Başla</Link>
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-                {recent.map((d) => (
-                  <Link key={d.id} to="/gallery" className="group relative aspect-square overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-md transition-all">
-                    <img src={d.image_url} alt={d.prompt} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       <Search className="h-6 w-6 text-white" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          <Card className="border-none bg-gradient-to-br from-primary/10 via-background to-background shadow-lg overflow-hidden">
-            <CardHeader>
-              <CardTitle className="text-md flex items-center gap-2 font-bold">
-                <TrendingUp className="h-5 w-5 text-primary" /> Trend Radarı
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                { name: "Vintage 90s Streetwear", change: "+45%", status: "Hot" },
-                { name: "Custom Pet Portraits", change: "+12%", status: "Rising" },
-                { name: "Minimalist Line Art", change: "+28%", status: "Hot" },
-                { name: "Eco-Friendly Tote Bags", change: "+19%", status: "Rising" },
-              ].map((trend, i) => (
-                <div key={i} className="flex items-center justify-between rounded-xl bg-card/50 p-4 border border-border/50 hover:border-primary/30 transition-colors">
-                  <div className="text-sm font-bold">{trend.name}</div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black text-green-500">{trend.change}</span>
-                    <span className={`rounded-full px-2.5 py-1 text-[8px] font-black uppercase ${
-                      trend.status === "Hot" ? "bg-red-500/10 text-red-500" : "bg-blue-500/10 text-blue-500"
-                    }`}>
-                      {trend.status}
-                    </span>
+            {/* Performance Chart Simulation */}
+            <section className="rounded-[3rem] border border-border/50 bg-card/30 p-10 shadow-sm">
+               <div className="flex items-center justify-between mb-8">
+                  <div className="space-y-1">
+                     <h2 className="text-xl font-black uppercase tracking-tighter italic">Satış Performansı</h2>
+                     <p className="text-[10px] font-bold text-muted-foreground italic uppercase">Son 7 Günlük Analiz</p>
                   </div>
-                </div>
-              ))}
-              <Link to="/trends">
-                <Button variant="outline" className="w-full mt-2 font-bold text-xs">
-                  Detaylı Analiz Et
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+                  <Badge variant="outline" className="font-black text-[10px] uppercase border-primary/20 text-primary">Canlı Veri</Badge>
+               </div>
+               
+               <div className="flex h-48 items-end gap-3 sm:gap-6">
+                  {[45, 65, 32, 85, 55, 95, 75].map((val, i) => (
+                    <div key={i} className="group relative flex-1 flex flex-col items-center gap-3">
+                       <div className="absolute -top-8 scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all bg-primary text-white text-[10px] font-black px-2 py-1 rounded-md">
+                          ₺{val * 10}
+                       </div>
+                       <div 
+                        className="w-full bg-muted rounded-t-xl group-hover:bg-primary transition-all duration-700 cursor-pointer" 
+                        style={{ height: `${val}%` }} 
+                       />
+                       <span className="text-[10px] font-black text-muted-foreground uppercase">{['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][i]}</span>
+                    </div>
+                  ))}
+               </div>
+            </section>
+         </div>
 
-          <Card className="bg-primary text-primary-foreground shadow-2xl shadow-primary/20 relative overflow-hidden group">
-             <div className="absolute -right-4 -top-4 p-8 opacity-10 group-hover:scale-110 transition-transform">
-                <Sparkles className="h-24 w-24" />
-             </div>
-             <CardContent className="p-6 relative z-10">
-                <h3 className="font-bold text-xl leading-tight">Yapay Zeka Uzman Önerisi</h3>
-                <p className="mt-4 text-sm opacity-90 leading-relaxed font-medium">
-                  "Bugün **Retro Karakter** tasarımları Etsy'de %20 daha fazla aranıyor. Bir adet denemek ister misin?"
-                </p>
-                <Link to="/generate">
-                  <Button variant="secondary" className="mt-6 w-full font-bold shadow-lg">
-                     Hemen Üretmeye Başla
+         {/* ── SIDEBAR ── */}
+         <div className="space-y-8">
+            {/* AI Insights */}
+            <Card className="border-none bg-foreground text-background shadow-2xl rounded-[3rem] overflow-hidden group">
+               <div className="absolute -right-6 -top-6 h-32 w-32 bg-primary/20 blur-[50px] group-hover:scale-150 transition-transform duration-1000" />
+               <CardContent className="p-10 space-y-6 relative z-10">
+                  <div className="flex items-center gap-3">
+                     <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
+                        <Zap className="h-6 w-6 text-white" />
+                     </div>
+                     <span className="text-[10px] font-black uppercase tracking-widest italic opacity-70 text-primary">AI Önerisi</span>
+                  </div>
+                  <h3 className="text-2xl font-black italic tracking-tighter leading-tight uppercase">
+                     Kupa satışlarınızda <span className="text-primary">Retro Vibes</span> rüzgarı esiyor.
+                  </h3>
+                  <p className="text-xs font-bold opacity-60 leading-relaxed italic">
+                     Verilerimiz bu hafta %35 daha fazla dönüşüm öngörüyor. Yeni bir tasarım serisi başlatmak ister misiniz?
+                  </p>
+                  <Button variant="secondary" className="w-full h-12 font-black uppercase tracking-widest shadow-xl rounded-2xl">
+                     <Link to="/generate">Atölyeye Git</Link>
                   </Button>
-                </Link>
-             </CardContent>
-          </Card>
-        </div>
+               </CardContent>
+            </Card>
+
+            {/* Recent Activity */}
+            <section className="space-y-6">
+               <h2 className="text-sm font-black uppercase tracking-[0.2em] italic text-muted-foreground flex items-center gap-2 px-2">
+                  <Activity className="h-4 w-4" /> Son Etkinlikler
+               </h2>
+               <div className="space-y-4">
+                  {[
+                    { type: 'order', text: 'Yeni sipariş alındı! #ORD-9921', time: '2 dk önce', icon: ShoppingBag, color: 'text-blue-500' },
+                    { type: 'design', text: 'Tasarım HD kalitesine yükseltildi', time: '15 dk önce', icon: Sparkles, color: 'text-purple-500' },
+                    { type: 'listing', text: 'SEO iyileştirmesi tamamlandı', time: '1 saat önce', icon: Target, color: 'text-green-500' },
+                  ].map((act, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/20 transition-all cursor-pointer group">
+                       <div className={`h-10 w-10 rounded-xl bg-muted flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                          <act.icon className={`h-4 w-4 ${act.color}`} />
+                       </div>
+                       <div className="flex-1">
+                          <p className="text-xs font-bold italic">{act.text}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">{act.time}</p>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </section>
+         </div>
       </div>
     </div>
   );
