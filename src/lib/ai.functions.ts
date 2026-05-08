@@ -209,6 +209,19 @@ export const generateListing = createServerFn({ method: "POST" })
     return parsed;
   });
 
+// 4) Upscale/Refine image
+export const upscaleImage = createServerFn({ method: "POST" })
+  .inputValidator((d: { imageUrl: string; prompt: string }) => z.object({ imageUrl: z.string(), prompt: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    // We use a high-detail refinement prompt
+    const hdPrompt = `masterpiece, ultra high definition, 8k resolution, extreme detail, highly focused, ${data.prompt}`;
+    const seed = Math.floor(Math.random() * 1000000);
+    const safePrompt = encodeURIComponent(hdPrompt.replace(/[\n\r]/g, " "));
+    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=2048&height=2048&seed=${seed}&nologo=true&model=flux`;
+    
+    return { imageUrl };
+  });
+
 // 5) Get User Designs
 export const getUserDesigns = createServerFn({ method: "GET" })
   .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
@@ -223,3 +236,46 @@ export const getUserDesigns = createServerFn({ method: "GET" })
     if (error) throw error;
     return designs || [];
   });
+
+// 6) Etsy API Mock/Functionality
+export const fetchEtsyListings = createServerFn({ method: "GET" })
+  .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    // In a real app, this would call Etsy API. For now, we return mock + user's designs
+    const { data: designs } = await getSupabase()
+      .from("designs")
+      .select("*")
+      .eq("user_id", data.userId)
+      .limit(10);
+
+    const mockListings = [
+      { id: "1", title: "Funny Coding T-Shirt", price: "450", stock: 12, views: 245, image: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=200" },
+      { id: "2", title: "Minimalist Coffee Mug", price: "250", stock: 3, views: 102, image: "https://images.unsplash.com/photo-1514228742587-6b1558fbed20?q=80&w=200" },
+    ];
+
+    const designListings = (designs || []).map(d => ({
+       id: d.id,
+       title: d.prompt,
+       price: "500",
+       stock: 99,
+       views: 0,
+       image: d.image_url
+    }));
+
+    return { listings: [...designListings, ...mockListings], isDemo: designListings.length === 0 };
+  });
+
+export const fetchEtsyOrders = createServerFn({ method: "GET" })
+  .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    return {
+      stats: { totalSales: 42, totalRevenue: "18,450", activeOrders: 3 },
+      orders: [
+        { id: "ORD-9921", customer: "Alice Johnson", date: "2 saat önce", items: 2, total: "850", status: "Paid" },
+        { id: "ORD-9920", customer: "Bob Smith", date: "5 saat önce", items: 1, total: "450", status: "Shipped" },
+        { id: "ORD-9919", customer: "Charlie Davis", date: "Dün", items: 3, total: "1,250", status: "Processing" },
+      ],
+      isDemo: true
+    };
+  });
+
