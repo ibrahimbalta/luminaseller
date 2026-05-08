@@ -59,9 +59,9 @@ function DashboardPage() {
 
   const QUICK_ACTIONS = [
     { title: "Trend Radar", desc: "Karlı nişleri keşfet", icon: TrendingUp, href: "/trends", color: "text-blue-500", bg: "bg-blue-500/10" },
+    { title: "Mockup Studio", desc: "Ürün görselleri üret", icon: ImageIcon, href: "/mockups", color: "text-orange-500", bg: "bg-orange-500/10" },
     { title: "AI Atölye", desc: "Yeni tasarımlar üret", icon: Wand2, href: "/generate", color: "text-purple-500", bg: "bg-purple-500/10" },
     { title: "Marketing", desc: "Sosyal medya otomasyonu", icon: Megaphone, href: "/marketing", color: "text-pink-500", bg: "bg-pink-500/10" },
-    { title: "Analitik", desc: "Satış verilerini incele", icon: BarChart3, href: "/orders", color: "text-green-500", bg: "bg-green-500/10" },
   ];
 
   return (
@@ -179,6 +179,8 @@ function DashboardPage() {
 
          {/* ── SIDEBAR ── */}
          <div className="space-y-8">
+            <ProfitCalculator />
+
             {/* AI Insights */}
             <Card className="border-none bg-foreground text-background shadow-2xl rounded-[3rem] overflow-hidden group">
                <div className="absolute -right-6 -top-6 h-32 w-32 bg-primary/20 blur-[50px] group-hover:scale-150 transition-transform duration-1000" />
@@ -227,5 +229,69 @@ function DashboardPage() {
          </div>
       </div>
     </div>
+  );
+}
+
+function ProfitCalculator() {
+  const [price, setPrice] = useState<number>(250);
+  const [cost, setCost] = useState<number>(100);
+  
+  const listingFee = 0.20 * 33; // Mock conversion for TL (1 USD = 33 TL approx)
+  const transactionFee = price * 0.065;
+  const processingFee = (price * 0.04) + (0.30 * 33);
+  const totalFees = listingFee + transactionFee + processingFee;
+  const netProfit = price - cost - totalFees;
+  const margin = (netProfit / price) * 100;
+
+  return (
+    <Card className="border-none bg-card shadow-xl rounded-[2.5rem] overflow-hidden">
+       <CardHeader className="bg-primary/5 pb-4">
+          <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 italic">
+             <DollarSign className="h-4 w-4 text-primary" /> Etsy Kâr Hesaplayıcı
+          </CardTitle>
+       </CardHeader>
+       <CardContent className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Satış (₺)</label>
+                <input 
+                  type="number" 
+                  value={price} 
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  className="w-full h-10 bg-muted/50 rounded-xl px-3 font-black text-sm border-none focus:ring-2 ring-primary/20"
+                />
+             </div>
+             <div className="space-y-1">
+                <label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Maliyet (₺)</label>
+                <input 
+                  type="number" 
+                  value={cost} 
+                  onChange={(e) => setCost(Number(e.target.value))}
+                  className="w-full h-10 bg-muted/50 rounded-xl px-3 font-black text-sm border-none focus:ring-2 ring-primary/20"
+                />
+             </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-foreground text-background space-y-3">
+             <div className="flex justify-between items-center text-[10px] font-bold opacity-60 uppercase">
+                <span>Tahmini Kesinti:</span>
+                <span>₺{totalFees.toFixed(2)}</span>
+             </div>
+             <div className="h-[1px] bg-white/10" />
+             <div className="flex justify-between items-end">
+                <div>
+                   <p className="text-[10px] font-black uppercase opacity-60">Net Kâr</p>
+                   <p className="text-2xl font-black tracking-tighter text-primary">₺{netProfit.toFixed(2)}</p>
+                </div>
+                <Badge className="bg-primary/20 text-primary border-none font-black mb-1">
+                   %{isNaN(margin) ? 0 : margin.toFixed(0)} Marj
+                </Badge>
+             </div>
+          </div>
+          <p className="text-[8px] text-muted-foreground italic text-center leading-tight">
+             *Hesaplamalar %6.5 işlem ve %4 + 0.30$ ödeme komisyonu (Etsy Türkiye standartları) baz alınarak yapılmıştır.
+          </p>
+       </CardContent>
+    </Card>
   );
 }

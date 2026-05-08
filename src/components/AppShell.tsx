@@ -7,6 +7,7 @@ const nav = [
   { to: "/dashboard", label: "Panel", icon: Sparkles },
   { to: "/trends", label: "Trendler", icon: TrendingUp },
   { to: "/generate", label: "Üret", icon: Wand2 },
+  { to: "/mockups", label: "Mockup Studio", icon: ImageIcon },
   { to: "/inventory", label: "Envanter", icon: Box },
   { to: "/orders", label: "Siparişler", icon: ShoppingCart },
   { to: "/marketing", label: "Pazarlama", icon: Megaphone },
