@@ -31,14 +31,16 @@ function MarketingPage() {
   const { data: designs, isLoading } = useQuery({
     queryKey: ["my_designs", user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data } = await supabase
         .from("designs")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(12);
       return data;
     },
-    enabled: !!user,
+    enabled: !!user?.id,
   });
 
   const generateSocialContent = async (design: any) => {

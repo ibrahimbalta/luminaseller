@@ -4,17 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Heart, Trash2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/gallery")({
   component: Gallery,
 });
 
 function Gallery() {
+  const { user } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [filter, setFilter] = useState<"all" | "fav">("all");
 
   const load = async () => {
-    let q = supabase.from("designs").select("*").order("created_at", { ascending: false });
+    if (!user?.id) return;
+    let q = supabase.from("designs").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
     if (filter === "fav") q = q.eq("is_favorite", true);
     const { data } = await q;
     setItems(data ?? []);
