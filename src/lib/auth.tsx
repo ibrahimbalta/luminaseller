@@ -37,8 +37,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // Fail-safe: Force loading to false after 2 seconds no matter what
+    const timer = setTimeout(() => setLoading(false), 2000);
+
     // Only run auth logic in the browser
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') {
+      setLoading(false);
+      return;
+    }
 
     if (!supabase?.auth) {
       setLoading(false);
@@ -74,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
     return () => {
+      clearTimeout(timer);
       try { sub?.subscription?.unsubscribe(); } catch {}
     };
   }, []);
@@ -88,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshProfile,
         signOut: async () => {
           await supabase.auth.signOut();
+          window.location.href = "/";
         },
       }}
     >
