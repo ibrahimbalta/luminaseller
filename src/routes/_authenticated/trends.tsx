@@ -31,14 +31,18 @@ function TrendsPage() {
   const search = useServerFn(searchEtsyTrends);
   const { user } = useAuth();
 
+  const [status, setStatus] = useState("");
+
   const run = async (term?: string) => {
     const finalTerm = (term || niche).trim();
     if (!finalTerm || !user) return;
 
     setLoading(true);
     setData(null);
+    setStatus("Etsy trendleri taranıyor...");
     try {
       const res = await search({ data: { niche: finalTerm } });
+      setStatus("AI verileri analiz ediyor...");
       setData(res);
       
       await supabase.from("trend_searches").insert({
@@ -49,11 +53,12 @@ function TrendsPage() {
         design_ideas: res.ideas,
       });
 
-      toast.success(res.isCached ? "Trendler hafızadan yüklendi" : "Trendler başarıyla bulundu");
+      toast.success(res.isCached ? "Trendler hafızadan yüklendi" : "Trendler bulundu");
     } catch (e: any) {
-      toast.error(e.message ?? "Trend araması başarısız");
+      toast.error(e.message ?? "Hata oluştu");
     } finally {
       setLoading(false);
+      setStatus("");
     }
   };
 
@@ -98,10 +103,16 @@ function TrendsPage() {
       </div>
 
       {loading && (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-64 animate-pulse rounded-xl bg-card border border-border" />
-          ))}
+        <div className="space-y-6">
+          <div className="flex flex-col items-center justify-center py-10">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="mt-4 text-sm font-medium animate-pulse">{status}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-64 animate-pulse rounded-xl bg-card border border-border" />
+            ))}
+          </div>
         </div>
       )}
 

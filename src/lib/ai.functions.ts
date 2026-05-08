@@ -79,17 +79,17 @@ export const searchEtsyTrends = createServerFn({ method: "POST" })
       headers: { Authorization: `Bearer ${fcKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         query,
-        limit: 10,
+        limit: 5, // Reduced limit for speed
         scrapeOptions: { formats: ["markdown"], onlyMainContent: true },
       }),
     });
 
     if (!fcRes.ok) {
-      return { results: [], summary: "Etsy verisi alınamadı.", ideas: [] };
+      return { results: [], summary: "Etsy verisi şu an alınamadı.", ideas: [] };
     }
     const fcJson = await fcRes.json();
     const raw = fcJson?.data?.web ?? fcJson?.data ?? fcJson?.web ?? [];
-    const results = (Array.isArray(raw) ? raw : []).slice(0, 10).map((r: any) => ({
+    const results = (Array.isArray(raw) ? raw : []).slice(0, 5).map((r: any) => ({
       title: r.title ?? "",
       url: r.url ?? "",
       description: r.description ?? r.snippet ?? "",
