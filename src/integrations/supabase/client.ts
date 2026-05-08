@@ -5,24 +5,28 @@ import type { Database } from './types';
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || (typeof process !== 'undefined' ? (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL) : undefined);
-  const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || (typeof process !== 'undefined' ? (process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY) : undefined);
+  // Robust environment variable detection for both Vite (client) and Cloudflare (server)
+  const getEnv = (key: string) => {
+    if (typeof import.meta !== 'undefined' && import.meta.env?.[`VITE_${key}`]) return import.meta.env[`VITE_${key}`];
+    if (typeof process !== 'undefined' && process.env?.[`VITE_${key}`]) return process.env[`VITE_${key}`];
+    if (typeof process !== 'undefined' && process.env?.[key]) return process.env[key];
+    return undefined;
+  };
+
+  const SUPABASE_URL = getEnv('SUPABASE_URL');
+  const SUPABASE_PUBLISHABLE_KEY = getEnv('SUPABASE_PUBLISHABLE_KEY');
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const isServer = typeof window === 'undefined';
-    const message = `Supabase environment variables are missing. Please check your configuration.`;
-    
     if (isServer) {
-      console.error(`[Supabase Server] ${message}`);
-      // On server we might want to throw to catch config issues early
-      throw new Error(message);
-    } else {
-      console.warn(`[Supabase Client] ${message} - Client-side operations may fail.`);
-      // On client, returning a dummy client or null to prevent crash
-      return createClient<Database>('https://placeholder.supabase.co', 'placeholder', {
-        auth: { persistSession: false }
-      });
+      console.warn(`[Supabase Server] Missing environment variables. Rendering fallback.`);
+      return null as any; // Return null on server to avoid crashing during SSR
     }
+    
+    // On client, returning a dummy client to prevent crash
+    return createClient<Database>('https://placeholder.supabase.co', 'placeholder', {
+      auth: { persistSession: false }
+    });
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
