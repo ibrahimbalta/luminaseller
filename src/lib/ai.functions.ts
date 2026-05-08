@@ -17,59 +17,48 @@ function getSupabase() {
 const FIRECRAWL = "https://api.firecrawl.dev/v2/search";
 
 async function callAI(body: { model: string; messages: any[]; response_format?: any }) {
-  const key = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
-  if (!key) throw new Error("GEMINI_API_KEY missing. Lütfen .env dosyasına ekleyin.");
+  const key = process.env.GEMINI_API_KEY || (typeof import.meta !== 'undefined' ? import.meta.env.VITE_GEMINI_API_KEY : undefined);
+  if (!key) throw new Error("GEMINI_API_KEY eksik. Lütfen Cloudflare panelinden ekleyin.");
   
-  // Standard Gemini models: gemini-1.5-flash, gemini-1.5-pro
-  const modelName = body.model.includes("flash") ? "gemini-1.5-flash" : "gemini-1.5-pro";
-  const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${key}`;
+  // Use gemini-1.5-flash for maximum speed and reliability
+  const model = "gemini-1.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`;
   
   const systemMessage = body.messages.find((m: any) => m.role === "system");
-  const chatMessages = body.messages.filter((m: any) => m.role !== "system");
+  const userMessages = body.messages.filter((m: any) => m.role !== "system");
 
-  // If we have a system message, prepend it to the first user message
-  if (systemMessage && chatMessages.length > 0) {
-    chatMessages[0].content = `TALİMAT: ${systemMessage.content}\n\nKULLANICI MESAJI: ${chatMessages[0].content}`;
+  // Format messages for Gemini REST API
+  const contents = userMessages.map((m: any) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }]
+  }));
+
+  // If system message exists, prepend to the first user message for stability
+  if (systemMessage && contents.length > 0) {
+    contents[0].parts[0].text = `INSTRUCTIONS: ${systemMessage.content}\n\nUSER REQUEST: ${contents[0].parts[0].text}`;
   }
-
-  const geminiBody: any = {
-    contents: chatMessages.map((m: any) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }]
-    }))
-  };
 
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(geminiBody),
+    body: JSON.stringify({ contents }),
   });
 
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Gemini AI ${res.status}: ${t}`);
+    const errorText = await res.text();
+    throw new Error(`AI Service Error (${res.status}): ${errorText}`);
   }
 
-  const json = await res.json();
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
   
-  // Return in a format similar to what the rest of the code expects
-  return {
-    choices: [
-      {
-        message: {
-          content: text
-        }
-      }
-    ]
-  };
+  return { choices: [{ message: { content: text } }] };
 }
 
 // 1) Etsy trend search via Firecrawl + AI summary
 export const searchEtsyTrends = createServerFn({ method: "POST" })
   .inputValidator((d: { niche: string }) => z.object({ niche: z.string().min(2).max(100) }).parse(d))
   .handler(async ({ data }) => {
-    // 1. Check Cache (Last 24 hours)
     const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: cached } = await getSupabase()
       .from("trend_searches")
@@ -81,7 +70,6 @@ export const searchEtsyTrends = createServerFn({ method: "POST" })
       .single();
 
     if (cached) {
-      console.log(`Cache hit for niche: ${data.niche}`);
       return { 
         results: (cached.results as any[]) || [], 
         summary: cached.ai_summary || "", 
@@ -90,8 +78,8 @@ export const searchEtsyTrends = createServerFn({ method: "POST" })
       };
     }
 
-    const fcKey = process.env.FIRECRAWL_API_KEY || import.meta.env.VITE_FIRECRAWL_API_KEY;
-    if (!fcKey) throw new Error("FIRECRAWL_API_KEY missing");
+    const fcKey = process.env.FIRECRAWL_API_KEY || (typeof import.meta !== 'undefined' ? import.meta.env.VITE_FIRECRAWL_API_KEY : undefined);
+    if (!fcKey) throw new Error("FIRECRAWL_API_KEY eksik.");
 
     const query = `best selling ${data.niche} site:etsy.com`;
     const fcRes = await fetch("https://api.firecrawl.dev/v2/search", {
@@ -105,8 +93,7 @@ export const searchEtsyTrends = createServerFn({ method: "POST" })
     });
 
     if (!fcRes.ok) {
-      const t = await fcRes.text();
-      return { results: [], summary: `Trend araması başarısız: ${fcRes.status}`, ideas: [], error: t };
+      return { results: [], summary: "Etsy verisi alınamadı.", ideas: [] };
     }
     const fcJson = await fcRes.json();
     const raw = fcJson?.data?.web ?? fcJson?.data ?? fcJson?.web ?? [];
@@ -114,13 +101,7 @@ export const searchEtsyTrends = createServerFn({ method: "POST" })
       title: r.title ?? "",
       url: r.url ?? "",
       description: r.description ?? r.snippet ?? "",
-      imageUrl:
-        r.metadata?.ogImage ??
-        r.metadata?.["og:image"] ??
-        r.metadata?.twitterImage ??
-        r.metadata?.image ??
-        r.image ??
-        "",
+      imageUrl: r.metadata?.ogImage ?? r.metadata?.["og:image"] ?? "",
     }));
 
     const ai = await callAI({
@@ -128,97 +109,65 @@ export const searchEtsyTrends = createServerFn({ method: "POST" })
       messages: [
         {
           role: "system",
-          content:
-            "Sen bir Etsy POD uzmanısın. Verilen Etsy ürün listesini analiz et ve JSON döndür: {summary: string (Türkçe, 3-4 cümle, neden satıyorlar + hedef kitle), ideas: string[] (5 özgün tasarım fikri, kısa İngilizce prompt formatında)}. Sadece JSON döndür.",
+          content: "Sen bir Etsy POD uzmanısın. Verilen ürünleri analiz et ve JSON döndür: {summary: string (Türkçe özet), ideas: string[] (5 tasarım promptu)}. Sadece JSON."
         },
         {
           role: "user",
-          content: `Niş: ${data.niche}\n\nÜrünler:\n${results
-            .map((r: any, i: number) => `${i + 1}. ${r.title} — ${r.description}`)
-            .join("\n")}`,
-        },
-      ],
-      response_format: { type: "json_object" },
+          content: `Niş: ${data.niche}\nÜrünler: ${results.map(r => r.title).join(", ")}`
+        }
+      ]
     });
 
-    let parsed: { summary: string; ideas: string[] } = { summary: "", ideas: [] };
+    let parsed = { summary: "", ideas: [] };
     try {
-      parsed = JSON.parse(ai.choices?.[0]?.message?.content ?? "{}");
-    } catch {}
+      const cleanJson = ai.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(cleanJson);
+    } catch (e) {
+      console.error("JSON Parse Error:", e);
+    }
 
-    // Results will be saved to DB in the frontend route (trends.tsx) 
-    // to associate with the current user, but this function provides the data.
-    return { results, summary: parsed.summary ?? "", ideas: parsed.ideas ?? [] };
+    return { results, summary: parsed.summary, ideas: parsed.ideas };
   });
 
 // 2) Generate design image
 export const generateDesign = createServerFn({ method: "POST" })
-  .inputValidator((d: { prompt: string; style: string; referenceImageUrl?: string }) =>
-    z
-      .object({
-        prompt: z.string().min(3).max(500),
-        style: z.string().max(80),
-        referenceImageUrl: z.string().url().optional(),
-      })
-      .parse(d),
-  )
+  .inputValidator((d: { prompt: string; style: string }) => z.object({ prompt: z.string(), style: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    const flatRules = "flat standalone artwork, graphic only, no product, no mockup, white background, print-ready, high contrast";
-    const fullPrompt = `${data.prompt}. Style: ${data.style}. ${flatRules}`;
+    const fullPrompt = `${data.prompt}. Style: ${data.style}. clean white background, standalone graphic.`;
     const seed = Math.floor(Math.random() * 1000000);
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
     return { imageUrl };
   });
 
-// 3) Generate Etsy listing + marketing
+// 3) Generate Etsy listing
 export const generateListing = createServerFn({ method: "POST" })
-  .inputValidator((d: { prompt: string; niche: string; language: "tr" | "en" }) =>
-    z
-      .object({
-        prompt: z.string().min(3).max(500),
-        niche: z.string().min(2).max(100),
-        language: z.enum(["tr", "en"]),
-      })
-      .parse(d),
-  )
+  .inputValidator((d: { prompt: string; niche: string; language: "tr" | "en" }) => z.object({ prompt: z.string(), niche: z.string(), language: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    const lang = data.language === "tr" ? "Türkçe" : "İngilizce";
     const ai = await callAI({
       model: "gemini-1.5-flash",
       messages: [
         {
           role: "system",
-          content: `Sen bir Etsy SEO + POD uzmanısın. ${lang} dilinde JSON döndür: {title: string (Etsy başlığı, max 140 karakter, anahtar kelimeler önde), description: string (long-form, 4-6 paragraf, hook + ürün özellikleri + bakım + hediye fikri), tags: string[] (tam 13 adet, her biri max 20 karakter), pinterest_text: string (1 pin başlığı + 2 cümle açıklama), tiktok_script: string (Hook + 3 sahne + CTA, 30 saniye)}. Sadece JSON döndür.`,
+          content: `Sen bir Etsy SEO uzmanısın. JSON döndür: {title: string, description: string, tags: string[]}. Dil: ${data.language}`
         },
         {
           role: "user",
-          content: `Niş: ${data.niche}\nTasarım konsepti: ${data.prompt}`,
-        },
-      ],
-      response_format: { type: "json_object" },
+          content: `Tasarım: ${data.prompt}`
+        }
+      ]
     });
-    let parsed: any = {};
+    let parsed = { title: "", description: "", tags: [] };
     try {
-      parsed = JSON.parse(ai.choices?.[0]?.message?.content ?? "{}");
+      const cleanJson = ai.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(cleanJson);
     } catch {}
-    return {
-      title: parsed.title ?? "",
-      description: parsed.description ?? "",
-      tags: Array.isArray(parsed.tags) ? parsed.tags.slice(0, 13) : [],
-      pinterest_text: parsed.pinterest_text ?? "",
-      tiktok_script: parsed.tiktok_script ?? "",
-    };
+    return parsed;
   });
 
-// 4) Upscale / Enhance Image
+// 4) Upscale
 export const upscaleImage = createServerFn({ method: "POST" })
-  .inputValidator((d: { imageUrl: string; prompt: string }) => 
-    z.object({ imageUrl: z.string().url(), prompt: z.string() }).parse(d)
-  )
+  .inputValidator((d: { imageUrl: string; prompt: string }) => z.object({ imageUrl: z.string(), prompt: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    // For a free upscale, we can use Pollinations with a high-res modifier
-    const hdPrompt = `Extremely high resolution, 4k, sharp details, vector-like quality, professional print ready, high contrast, clean lines: ${data.prompt}`;
-    const seed = Math.floor(Math.random() * 1000000);
-    const hdUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(hdPrompt)}?width=2048&height=2048&seed=${seed}&nologo=true&model=flux`;
+    const hdUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(data.prompt + " high resolution 4k")}?width=2048&height=2048&nologo=true`;
     return { imageUrl: hdUrl };
   });
