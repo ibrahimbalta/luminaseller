@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Instagram, Share2, Pin, Copy, Download, 
-  Sparkles, Loader2, Smartphone, Send
+  Sparkles, Loader2, Smartphone, Send, Image as ImageIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { generateListing } from "@/lib/ai.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/marketing")({
   component: MarketingPage,
@@ -21,7 +23,9 @@ function MarketingPage() {
   const { user } = useAuth();
   const [selectedDesign, setSelectedDesign] = useState<any>(null);
   const [caption, setCaption] = useState("");
+  const [pinterestDesc, setPinterestDesc] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const genListing = useServerFn(generateListing);
 
   // Fetch user's designs
   const { data: designs, isLoading } = useQuery({
@@ -40,12 +44,25 @@ function MarketingPage() {
   const generateSocialContent = async (design: any) => {
     setSelectedDesign(design);
     setIsGenerating(true);
-    // Simple placeholder for content generation
-    // In a real app, this would call Gemini again or use previously saved listing data
-    setTimeout(() => {
-      setCaption(`✨ Yeni Tasarım: ${design.prompt}\n\n🎨 Bu eşsiz parça şimdi Etsy dükkanımda! Link bio'da. \n\n#Etsy #PrintOnDemand #Handmade #Design #GiftIdeas`);
+    setCaption("");
+    try {
+      const res = await genListing({
+        data: {
+          prompt: design.prompt,
+          niche: design.niche || "Etsy",
+          language: "tr"
+        }
+      });
+      
+      setCaption(res.instagram_text || res.description || "İçerik üretilemedi.");
+      setPinterestDesc(res.pinterest_text || res.title || "");
+      toast.success("Pazarlama içerikleri hazır!");
+    } catch (e: any) {
+      toast.error("AI İçerik hatası: " + e.message);
+      setCaption(`✨ Yeni Tasarım: ${design.prompt}\n\n🎨 Bu eşsiz parça şimdi dükkanımda!`);
+    } finally {
       setIsGenerating(false);
-    }, 1000);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -171,9 +188,11 @@ function MarketingPage() {
                     </div>
                     <Button 
                       className="w-full gap-2 bg-[#E60023] hover:bg-[#E60023]/90 text-white" 
-                      onClick={() => pinToPinterest(selectedDesign.image_url, selectedDesign.prompt)}
+                      onClick={() => pinToPinterest(selectedDesign.image_url, pinterestDesc || selectedDesign.prompt)}
+                      disabled={isGenerating}
                     >
-                      <Pin className="h-4 w-4" /> Pinterest'e Pinle
+                      {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pin className="h-4 w-4" />}
+                      Pinterest'e Pinle
                     </Button>
                   </div>
                 </TabsContent>
