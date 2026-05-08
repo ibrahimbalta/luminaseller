@@ -42,12 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            {profile && (
-              <div className="mr-2 hidden items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary sm:flex">
-                <Sparkles className="h-3 w-3" />
-                {profile.plan?.toUpperCase()} • {profile.credits} Krediler
-              </div>
-            )}
+
             <span className="hidden text-xs text-muted-foreground sm:inline">{user?.email}</span>
             <Button
               variant="ghost"

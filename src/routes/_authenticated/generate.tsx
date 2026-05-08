@@ -57,29 +57,11 @@ function GeneratePage() {
   const upscaleFn = useServerFn(upscaleImage);
   const [upscaleLoading, setUpscaleLoading] = useState(false);
 
-  const checkCredits = (amount = 1) => {
-    if (!profile || profile.credits < amount) {
-      toast.error("Yetersiz kredi. Lütfen planınızı yükseltin.", {
-        action: { label: "Yükselt", onClick: () => window.location.href = "/pricing" }
-      });
-      return false;
-    }
-    return true;
-  };
 
-  const consumeCredit = async (amount = 1) => {
-    if (!user) return;
-    const { error } = await supabase
-      .from("profiles")
-      .update({ credits: profile.credits - amount })
-      .eq("user_id", user.id);
-    if (!error) refreshProfile();
-  };
 
   const generate = async () => {
     if (!prompt.trim() || !user) return;
     const count = bulkCount || 1;
-    if (!checkCredits(count)) return;
 
     setGenLoading(true);
     setImageUrl(null);
@@ -113,8 +95,7 @@ function GeneratePage() {
       
       setBulkResults(results);
       setImageUrl(results[0]); // Set first one as main preview
-      await consumeCredit(count);
-      toast.success(`${count} tasarım üretildi (${count} kredi kullanıldı)`);
+      toast.success(`${count} tasarım üretildi`);
     } catch (e: any) {
       toast.error(e.message ?? "Üretim hatası");
     } finally {
@@ -131,7 +112,6 @@ function GeneratePage() {
 
   const generateVariation = async (extra: string, label: string) => {
     if (!prompt.trim() || !user) return;
-    if (!checkCredits(1)) return;
 
     setVarLoading(true);
     try {
@@ -146,8 +126,7 @@ function GeneratePage() {
       await supabase
         .from("designs")
         .insert({ user_id: user.id, niche, style, prompt: `${prompt} (${label})`, image_url: res.imageUrl });
-      await consumeCredit(1);
-      toast.success(`Varyasyon üretildi (1 kredi kullanıldı)`);
+      toast.success(`Varyasyon üretildi`);
     } catch (e: any) {
       toast.error(e.message ?? "Varyasyon hatası");
     } finally {

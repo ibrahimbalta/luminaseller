@@ -182,26 +182,7 @@ function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-none bg-card/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Kredi Durumu</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between">
-                <div className="text-2xl font-bold">{profile?.credits || 0}</div>
-                <div className="text-xs text-muted-foreground pb-1">/ {profile?.credits_reset_at ? "100" : "10"} Kredi</div>
-              </div>
-              <div className="mt-3 h-1.5 w-full rounded-full bg-muted">
-                <div 
-                  className="h-full rounded-full bg-primary" 
-                  style={{ width: `${(profile?.credits || 0) / (profile?.credits_reset_at ? 100 : 10) * 100}%` }}
-                />
-              </div>
-              <Button asChild variant="link" className="mt-2 h-auto p-0 text-xs text-primary">
-                <Link to="/pricing">Kredi Satın Al</Link>
-              </Button>
-            </CardContent>
-          </Card>
+
         </div>
       </div>
     </div>

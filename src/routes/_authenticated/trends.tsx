@@ -22,13 +22,6 @@ function TrendsPage() {
 
   const run = async () => {
     if (!niche.trim() || !user) return;
-    
-    if (!profile || profile.credits < 1) {
-      toast.error("Yetersiz kredi. Lütfen planınızı yükseltin.", {
-        action: { label: "Yükselt", onClick: () => window.location.href = "/pricing" }
-      });
-      return;
-    }
 
     setLoading(true);
     setData(null);
@@ -45,18 +38,7 @@ function TrendsPage() {
         design_ideas: res.ideas,
       });
 
-      if (res.isCached) {
-        toast.success("Trendler hafızadan yüklendi (Kredi harcanmadı)");
-      } else {
-        // Consume credit ONLY if not cached
-        const { error } = await supabase
-          .from("profiles")
-          .update({ credits: profile.credits - 1 })
-          .eq("user_id", user.id);
-        
-        if (!error) refreshProfile();
-        toast.success("Trendler bulundu (1 kredi kullanıldı)");
-      }
+      toast.success(res.isCached ? "Trendler hafızadan yüklendi" : "Trendler başarıyla bulundu");
     } catch (e: any) {
       toast.error(e.message ?? "Trend araması başarısız");
     } finally {
