@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings as SettingsIcon, Shop, CreditCard, User, LogOut, Check, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { Settings as SettingsIcon, Shop, CreditCard, User, LogOut, Check, ExternalLink, Loader2, RefreshCw, Megaphone, Crown, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getEtsyAuthUrl } from "@/lib/etsy.functions";
