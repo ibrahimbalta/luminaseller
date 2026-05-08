@@ -22,26 +22,22 @@ async function callAI(body: { model: string; messages: any[]; response_format?: 
   
   // Standard Gemini models: gemini-1.5-flash, gemini-1.5-pro
   const modelName = body.model.includes("flash") ? "gemini-1.5-flash" : "gemini-1.5-pro";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${key}`;
   
   const systemMessage = body.messages.find((m: any) => m.role === "system");
   const chatMessages = body.messages.filter((m: any) => m.role !== "system");
+
+  // If we have a system message, prepend it to the first user message
+  if (systemMessage && chatMessages.length > 0) {
+    chatMessages[0].content = `TALİMAT: ${systemMessage.content}\n\nKULLANICI MESAJI: ${chatMessages[0].content}`;
+  }
 
   const geminiBody: any = {
     contents: chatMessages.map((m: any) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }]
-    })),
-    generation_config: {
-      response_mime_type: body.response_format?.type === "json_object" ? "application/json" : "text/plain",
-    }
+    }))
   };
-
-  if (systemMessage) {
-    geminiBody.system_instruction = {
-      parts: [{ text: systemMessage.content }]
-    };
-  }
 
   const res = await fetch(url, {
     method: "POST",
