@@ -209,10 +209,17 @@ export const generateListing = createServerFn({ method: "POST" })
     return parsed;
   });
 
-// 4) Upscale
-export const upscaleImage = createServerFn({ method: "POST" })
-  .inputValidator((d: { imageUrl: string; prompt: string }) => z.object({ imageUrl: z.string(), prompt: z.string() }).parse(d))
+// 5) Get User Designs
+export const getUserDesigns = createServerFn({ method: "GET" })
+  .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    const hdUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(data.prompt + " high resolution 4k")}?width=2048&height=2048&nologo=true`;
-    return { imageUrl: hdUrl };
+    const { data: designs, error } = await getSupabase()
+      .from("designs")
+      .select("*")
+      .eq("user_id", data.userId)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    
+    if (error) throw error;
+    return designs || [];
   });

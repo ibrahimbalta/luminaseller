@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { generateListing } from "@/lib/ai.functions";
+import { generateListing, getUserDesigns } from "@/lib/ai.functions";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute("/_authenticated/marketing")({
@@ -26,19 +26,14 @@ function MarketingPage() {
   const [pinterestDesc, setPinterestDesc] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const genListing = useServerFn(generateListing);
+  const getDesigns = useServerFn(getUserDesigns);
 
   // Fetch user's designs
   const { data: designs, isLoading } = useQuery({
     queryKey: ["my_designs", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data } = await supabase
-        .from("designs")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(12);
-      return data;
+      return await getDesigns({ data: { userId: user.id } });
     },
     enabled: !!user?.id,
   });
