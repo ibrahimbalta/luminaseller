@@ -37,25 +37,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, s) => {
-      setSession(s);
-      if (s?.user) {
-        await fetchProfile(s.user.id);
-      } else {
-        setProfile(null);
-      }
+    // Skip auth on server side
+    if (typeof window === 'undefined') {
       setLoading(false);
-    });
+      return;
+    }
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      if (data.session?.user) {
-        await fetchProfile(data.session.user.id);
-      }
+    // Guard against null supabase client
+    if (!supabase?.auth) {
       setLoading(false);
-    });
+      return;
+    }
 
-    return () => sub.subscription.unsubscribe();
+    let sub: any;
+    try {
+      const result = supabase.auth.onAuthStateChange(async (_e, s) => {
+        setSession(s);
+        if (s?.user) {
+          try { await fetchProfile(s.user.id); } catch {}
+        } else {
+          setProfile(null);
+        }
+        setLoading(false);
+      });
+      sub = result?.data;
+    } catch {
+      setLoading(false);
+    }
+
+    supabase.auth.getSession()
+      .then(async ({ data }) => {
+        setSession(data.session);
+        if (data.session?.user) {
+          try { await fetchProfile(data.session.user.id); } catch {}
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+
+    return () => {
+      try { sub?.subscription?.unsubscribe(); } catch {}
+    };
   }, []);
 
   return (
