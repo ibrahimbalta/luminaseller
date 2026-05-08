@@ -6,14 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, ExternalLink, Wand2 } from "lucide-react";
+import { Loader2, ExternalLink, Wand2, Search, Sparkles, TrendingUp, Star } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/trends")({
   component: TrendsPage,
 });
 
-import { Search, Sparkles, TrendingUp, Loader2, ExternalLink, Wand2, Star } from "lucide-react";
+
 
 const TRENDING_NICHES = [
   { label: "👕 T-Shirts", value: "best selling t-shirts" },
