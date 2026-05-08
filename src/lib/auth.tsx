@@ -37,13 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Skip auth on server side
-    if (typeof window === 'undefined') {
-      setLoading(false);
-      return;
-    }
+    // Only run auth logic in the browser
+    if (typeof window === 'undefined') return;
 
-    // Guard against null supabase client
     if (!supabase?.auth) {
       setLoading(false);
       return;
