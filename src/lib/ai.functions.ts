@@ -161,24 +161,51 @@ export const generateDesign = createServerFn({ method: "POST" })
 export const generateListing = createServerFn({ method: "POST" })
   .inputValidator((d: { prompt: string; niche: string; language: "tr" | "en" }) => z.object({ prompt: z.string(), niche: z.string(), language: z.string() }).parse(d))
   .handler(async ({ data }) => {
+    // Truncate prompt for AI
+    const cleanPrompt = data.prompt.slice(0, 500);
+    
     const ai = await callAI({
-      model: "gemini-1.5-flash",
       messages: [
         {
           role: "system",
-          content: `Sen bir Etsy SEO uzmanısın. JSON döndür: {title: string, description: string, tags: string[]}. Dil: ${data.language}`
+          content: `Sen bir Etsy ve Sosyal Medya SEO uzmanısın. Tasarım için şu JSON formatında veri döndür: 
+          {
+            "title": "string (SEO uyumlu başlık)",
+            "description": "string (ikna edici açıklama)",
+            "tags": ["string", "string", ... (13 adet)],
+            "instagram_text": "string (emoji ve hashtaglerle post metni)",
+            "pinterest_text": "string (pin açıklaması)",
+            "tiktok_script": "string (video senaryosu)"
+          }
+          Dil: ${data.language}. Sadece JSON döndür.`
         },
         {
           role: "user",
-          content: `Tasarım: ${data.prompt}`
+          content: `Tasarım: ${cleanPrompt}\nNiş: ${data.niche}`
         }
       ]
     });
-    let parsed = { title: "", description: "", tags: [] };
+
+    let parsed = { 
+      title: "Yeni Tasarım", 
+      description: "Harika bir tasarım.", 
+      tags: ["gift", "handmade"],
+      instagram_text: "",
+      pinterest_text: "",
+      tiktok_script: ""
+    };
+
     try {
-      const cleanJson = ai.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim();
-      parsed = JSON.parse(cleanJson);
-    } catch {}
+      let content = ai.choices[0].message.content;
+      // Robust JSON cleaning
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        content = jsonMatch[0];
+      }
+      parsed = JSON.parse(content);
+    } catch (e) {
+      console.error("Listing JSON Parse Error:", e);
+    }
     return parsed;
   });
 
