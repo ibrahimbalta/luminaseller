@@ -67,8 +67,16 @@ function Gallery() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((d) => (
             <div key={d.id} className="group overflow-hidden rounded-xl border border-border bg-card">
-              <div className="aspect-square">
-                <img src={d.image_url} alt={d.prompt} className="h-full w-full object-cover" />
+              <div className="aspect-square bg-muted flex items-center justify-center relative overflow-hidden">
+                <img 
+                  src={d.image_url} 
+                  alt="Tasarım" 
+                  className="h-full w-full object-cover transition-opacity duration-300"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "https://placehold.co/600x600/1a1a1a/ffffff?text=Resim+Yuklenemedi";
+                  }}
+                />
               </div>
               <div className="p-3">
                 <p className="line-clamp-2 text-xs text-muted-foreground">{d.prompt}</p>

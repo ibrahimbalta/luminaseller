@@ -127,11 +127,16 @@ export const generateDesign = createServerFn({ method: "POST" })
     z.object({ prompt: z.string(), style: z.string(), userId: z.string(), niche: z.string() }).parse(d)
   )
   .handler(async ({ data }) => {
-    const fullPrompt = `${data.prompt}. Style: ${data.style}. clean white background, standalone graphic, high contrast, minimalist.`;
+    // Truncate prompt to prevent URL length issues (max ~400 chars for the core prompt)
+    const truncatedPrompt = data.prompt.slice(0, 400);
+    const fullPrompt = `${truncatedPrompt}. Style: ${data.style}. clean white background, standalone graphic, high contrast.`;
     const seed = Math.floor(Math.random() * 1000000);
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
     
-    // Save to database on server side for better reliability
+    // Sanitize prompt for URL
+    const safePrompt = encodeURIComponent(fullPrompt.replace(/[\n\r]/g, " "));
+    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
+    
+    // Save to database
     const { data: saved, error } = await getSupabase()
       .from("designs")
       .insert({ 
