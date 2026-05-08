@@ -121,14 +121,35 @@ export const searchEtsyTrends = createServerFn({ method: "POST" })
     return { results, summary: parsed.summary, ideas: parsed.ideas };
   });
 
-// 2) Generate design image
+// 2) Generate design image + Save to DB
 export const generateDesign = createServerFn({ method: "POST" })
-  .inputValidator((d: { prompt: string; style: string }) => z.object({ prompt: z.string(), style: z.string() }).parse(d))
+  .inputValidator((d: { prompt: string; style: string; userId: string; niche: string }) => 
+    z.object({ prompt: z.string(), style: z.string(), userId: z.string(), niche: z.string() }).parse(d)
+  )
   .handler(async ({ data }) => {
-    const fullPrompt = `${data.prompt}. Style: ${data.style}. clean white background, standalone graphic.`;
+    const fullPrompt = `${data.prompt}. Style: ${data.style}. clean white background, standalone graphic, high contrast, minimalist.`;
     const seed = Math.floor(Math.random() * 1000000);
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
-    return { imageUrl };
+    
+    // Save to database on server side for better reliability
+    const { data: saved, error } = await getSupabase()
+      .from("designs")
+      .insert({ 
+        user_id: data.userId, 
+        niche: data.niche, 
+        style: data.style, 
+        prompt: data.prompt, 
+        image_url: imageUrl 
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Database save error:", error);
+      // We still return the image even if DB save fails
+    }
+
+    return { imageUrl, designId: saved?.id };
   });
 
 // 3) Generate Etsy listing

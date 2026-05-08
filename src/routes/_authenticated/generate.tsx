@@ -78,19 +78,12 @@ function GeneratePage() {
           data: {
             prompt: prompt.trim(),
             style,
-            ...(referenceImageUrl ? { referenceImageUrl } : {}),
+            userId: user.id,
+            niche,
           },
         });
         results.push(res.imageUrl);
-        
-        // Save each to Supabase
-        const { data: savedDesign } = await supabase
-          .from("designs")
-          .insert({ user_id: user.id, niche, style, prompt, image_url: res.imageUrl })
-          .select()
-          .single();
-          
-        if (i === 0 && savedDesign) setDesignId(savedDesign.id);
+        if (i === 0) setDesignId(res.designId || null);
       }
       
       setBulkResults(results);
