@@ -22,7 +22,7 @@ async function callAI(body: { model: string; messages: any[]; response_format?: 
   
   // Standard Gemini models: gemini-1.5-flash, gemini-1.5-pro
   const modelName = body.model.includes("flash") ? "gemini-1.5-flash" : "gemini-1.5-pro";
-  const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${key}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
   
   const systemMessage = body.messages.find((m: any) => m.role === "system");
   const chatMessages = body.messages.filter((m: any) => m.role !== "system");
