@@ -16,41 +16,33 @@ function getSupabase() {
 
 const FIRECRAWL = "https://api.firecrawl.dev/v2/search";
 
-async function callAI(body: { model: string; messages: any[]; response_format?: any }) {
-  const key = process.env.GEMINI_API_KEY || (typeof import.meta !== 'undefined' ? import.meta.env.VITE_GEMINI_API_KEY : undefined);
-  if (!key) throw new Error("GEMINI_API_KEY eksik. Lütfen Cloudflare panelinden ekleyin.");
+async function callAI(body: { messages: any[] }) {
+  // Use Pollinations AI (100% Free, No Key Required, Fast)
+  const url = "https://text.pollinations.ai/";
   
-  // Use gemini-1.5-flash for maximum speed and reliability
-  const model = "gemini-1.5-flash";
-  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`;
-  
-  const systemMessage = body.messages.find((m: any) => m.role === "system");
-  const userMessages = body.messages.filter((m: any) => m.role !== "system");
+  const systemMessage = body.messages.find((m: any) => m.role === "system")?.content || "";
+  const userMessage = body.messages.find((m: any) => m.role === "user")?.content || "";
 
-  // Format messages for Gemini REST API
-  const contents = userMessages.map((m: any) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.content }]
-  }));
-
-  // If system message exists, prepend to the first user message for stability
-  if (systemMessage && contents.length > 0) {
-    contents[0].parts[0].text = `INSTRUCTIONS: ${systemMessage.content}\n\nUSER REQUEST: ${contents[0].parts[0].text}`;
-  }
+  const payload = {
+    messages: [
+      { role: "system", content: systemMessage },
+      { role: "user", content: userMessage }
+    ],
+    model: "openai", // Options: openai, mistral, llama
+    jsonMode: true
+  };
 
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ contents }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`AI Service Error (${res.status}): ${errorText}`);
+    throw new Error(`AI Hatası: ${res.status}`);
   }
 
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  const text = await res.text();
   
   return { choices: [{ message: { content: text } }] };
 }
