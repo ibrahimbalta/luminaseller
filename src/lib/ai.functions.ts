@@ -32,13 +32,13 @@ async function callAI(body: { model: string; messages: any[]; response_format?: 
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }]
     })),
-    generationConfig: {
-      responseMimeType: body.response_format?.type === "json_object" ? "application/json" : "text/plain",
+    generation_config: {
+      response_mime_type: body.response_format?.type === "json_object" ? "application/json" : "text/plain",
     }
   };
 
   if (systemMessage) {
-    geminiBody.systemInstruction = {
+    geminiBody.system_instruction = {
       parts: [{ text: systemMessage.content }]
     };
   }
