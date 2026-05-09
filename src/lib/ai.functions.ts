@@ -125,12 +125,51 @@ export const generateListing = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const ai = await callAI({
       messages: [
-        { role: "system", content: "SEO Uzmanı. JSON: { title: '', description: '', tags: [], pinterest_text: '', tiktok_script: '' }" },
-        { role: "user", content: `Tasarım: ${data.prompt}` }
+        {
+          role: "system",
+          content: `You are a world-class Etsy SEO expert. Create a listing package. 
+          1. Title: 140 chars, focus on high-volume long-tail keywords, repeat main niche.
+          2. Description: Compelling, benefits-oriented, includes shipping/care info.
+          3. Tags: Exactly 13 tags, multi-word, no single words.
+          4. Social: Captions for Pinterest and TikTok.
+          Respond ONLY with JSON: { title: string, description: string, tags: string[], pinterest_text: string, tiktok_script: string }`
+        },
+        {
+          role: "user",
+          content: `Design Idea: ${data.prompt}\nNiche: ${data.niche}\nLanguage: ${data.language}`
+        }
       ]
     });
-    const match = ai.choices[0].message.content.match(/\{[\s\S]*\}/);
-    return JSON.parse(match ? match[0] : "{}");
+
+    try {
+      const match = ai.choices[0].message.content.match(/\{[\s\S]*\}/);
+      return JSON.parse(match ? match[0] : "{}");
+    } catch (e) {
+      throw new Error("SEO Generation Error");
+    }
+  });
+
+export const generateMarketingContent = createServerFn({ method: "POST" })
+  .inputValidator((d: { designId: string; platform: string }) => 
+    z.object({ designId: z.string(), platform: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    const { data: design } = await getSupabase().from("designs").select("*").eq("id", data.designId).single();
+    if (!design) throw new Error("Tasarım bulunamadı");
+
+    const ai = await callAI({
+      messages: [
+        {
+          role: "system",
+          content: `Sen bir sosyal medya pazarlama uzmanısın. ${data.platform} için etkileyici, satış odaklı bir paylaşım metni yaz. Emojiler ve popüler hashtagler kullan.`
+        },
+        {
+          role: "user",
+          content: `Tasarım konusu: ${design.prompt}`
+        }
+      ]
+    });
+
+    return { content: ai.choices[0].message.content };
   });
 
 export const upscaleImage = createServerFn({ method: "POST" })

@@ -1,17 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { getUserDesigns } from "@/lib/ai.functions";
+import { getUserDesigns, generateMarketingContent } from "@/lib/ai.functions";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import {
   Sparkles, Megaphone, Image as ImageIcon, Check,
-  Loader2, Send, Wand2, ArrowRight
+  Loader2, Send, Wand2, Copy
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/marketing")({
   component: MarketingPage,
@@ -20,8 +21,11 @@ export const Route = createFileRoute("/_authenticated/marketing")({
 function MarketingPage() {
   const { user } = useAuth();
   const getDesigns = useServerFn(getUserDesigns);
+  const genMarketing = useServerFn(generateMarketingContent);
   const [selectedDesign, setSelectedDesign] = useState<any>(null);
   const [sharingId, setSharingId] = useState<string | null>(null);
+  const [aiContent, setAiContent] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { data: designs, isLoading } = useQuery({
     queryKey: ["user_designs", user?.id],
@@ -29,31 +33,38 @@ function MarketingPage() {
     enabled: !!user,
   });
 
-  const shareToSocial = async (designId: string, platform: string) => {
-    setSharingId(`${designId}-${platform}`);
+  const handleAiContent = async (platform: string) => {
+    if (!selectedDesign) return;
+    setIsGenerating(true);
     try {
-      await new Promise(r => setTimeout(r, 2000));
-      toast.success(`${platform} paylaşımı başarılı!`);
+      const res = await genMarketing({ data: { designId: selectedDesign.id, platform } });
+      setAiContent(res.content);
+      toast.success("AI içerik hazırladı!");
     } catch {
-      toast.error("Paylaşım sırasında hata oluştu.");
+      toast.error("İçerik üretilemedi.");
     } finally {
-      setSharingId(null);
+      setIsGenerating(false);
     }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(aiContent);
+    toast.success("Kopyalandı!");
   };
 
   return (
     <div className="space-y-8 pb-16 animate-in fade-in duration-500">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Pazarlama</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tasarımlarınızı sosyal medyada paylaşın.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Pazarlama Laboratuvarı</h1>
+          <p className="text-sm text-muted-foreground mt-1">Tasarımlarınızı sosyal medyada profesyonelce pazarlayın.</p>
         </div>
         <Button asChild variant="outline" size="sm" className="gap-2 mt-3 sm:mt-0">
           <Link to="/generate"><Wand2 className="h-3.5 w-3.5" /> Yeni Tasarım</Link>
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
         {/* Design Grid */}
         <Card className="rounded-xl border-border/60 shadow-sm">
           <CardHeader className="pb-3">
@@ -81,7 +92,7 @@ function MarketingPage() {
                 {designs.map((d: any) => (
                   <div
                     key={d.id}
-                    onClick={() => setSelectedDesign(d)}
+                    onClick={() => { setSelectedDesign(d); setAiContent(""); }}
                     className={`group relative aspect-square rounded-lg overflow-hidden cursor-pointer border-2 transition-all ${
                       selectedDesign?.id === d.id
                         ? "border-primary ring-2 ring-primary/20"
@@ -106,51 +117,57 @@ function MarketingPage() {
           <Card className="rounded-xl border-border/60 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Send className="h-3.5 w-3.5" /> Paylaşım Paneli
+                <Send className="h-3.5 w-3.5" /> Paylaşım & İçerik
               </CardTitle>
             </CardHeader>
-            <CardContent className="pb-5">
+            <CardContent className="pb-5 space-y-4">
               {!selectedDesign ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Megaphone className="h-8 w-8 mx-auto mb-2 opacity-20" />
                   <p className="text-sm font-medium">Tasarım seçin</p>
-                  <p className="text-[11px] mt-1">Soldaki listeden bir tasarım seçerek paylaşım yapabilirsiniz.</p>
+                  <p className="text-[11px] mt-1">Soldaki listeden bir tasarım seçin.</p>
                 </div>
               ) : (
                 <div className="space-y-4 animate-in fade-in duration-300">
                   <div className="aspect-square rounded-lg overflow-hidden border border-border/50 bg-muted/30">
                     <img src={selectedDesign.image_url} alt="" className="h-full w-full object-contain" />
                   </div>
-                  <p className="text-[11px] text-muted-foreground line-clamp-2">{selectedDesign.prompt}</p>
 
                   <div className="space-y-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Hızlı Hazırla</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button size="xs" variant="outline" onClick={() => handleAiContent("Instagram")} disabled={isGenerating}>
+                        Instagram
+                      </Button>
+                      <Button size="xs" variant="outline" onClick={() => handleAiContent("Pinterest")} disabled={isGenerating}>
+                        Pinterest
+                      </Button>
+                    </div>
+                  </div>
+
+                  {aiContent && (
+                    <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold text-primary uppercase">AI Paylaşım Metni</p>
+                        <Button variant="ghost" size="xs" onClick={copyToClipboard} className="h-6 w-6 p-0">
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <Textarea 
+                        readOnly 
+                        value={aiContent} 
+                        className="text-xs bg-muted/30 border-none resize-none leading-relaxed h-32"
+                      />
+                    </div>
+                  )}
+
+                  <div className="pt-2">
                     <Button
-                      className="w-full gap-2 bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 border-none"
+                      className="w-full gap-2 bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 border-none h-10"
                       size="sm"
-                      disabled={!!sharingId}
-                      onClick={() => shareToSocial(selectedDesign.id, "Instagram")}
+                      onClick={() => toast.info("Doğrudan paylaşım yakında eklenecek!")}
                     >
-                      {sharingId === `${selectedDesign.id}-Instagram`
-                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        : <><Megaphone className="h-3.5 w-3.5" /> Instagram'da Paylaş</>}
-                    </Button>
-                    <Button
-                      className="w-full gap-2 bg-red-600 hover:bg-red-700 border-none"
-                      size="sm"
-                      disabled={!!sharingId}
-                      onClick={() => shareToSocial(selectedDesign.id, "Pinterest")}
-                    >
-                      {sharingId === `${selectedDesign.id}-Pinterest`
-                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        : <><ImageIcon className="h-3.5 w-3.5" /> Pinterest'e Pinle</>}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      size="sm"
-                      onClick={() => toast.info("AI tüm kanallar için içerik hazırlıyor...")}
-                    >
-                      <Sparkles className="h-3.5 w-3.5" /> AI ile İçerik Üret
+                      <Send className="h-3.5 w-3.5" /> Şimdi Yayınla
                     </Button>
                   </div>
                 </div>
@@ -158,15 +175,14 @@ function MarketingPage() {
             </CardContent>
           </Card>
 
-          {/* Tip */}
           <Card className="rounded-xl border-border/60 shadow-sm bg-primary/5">
             <CardContent className="p-4">
               <div className="flex gap-3">
                 <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-medium">İpucu</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Etsy'de "Retro Typography" aramaları %45 artışta. Bu temadaki tasarımlarınızı öne çıkarın.
+                  <p className="text-xs font-medium">Strateji</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Instagram Reels için tasarımlarınızı hareketli mockup'larla gösterin. Etkileşim %30 artıyor.
                   </p>
                 </div>
               </div>
