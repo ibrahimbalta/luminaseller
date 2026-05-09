@@ -17,7 +17,6 @@ function getSupabase() {
 const FIRECRAWL = "https://api.firecrawl.dev/v2/search";
 
 async function callAI(body: { messages: any[] }) {
-  // Use ultra-fast endpoint
   const url = "https://text.pollinations.ai/";
   const systemMessage = body.messages.find((m: any) => m.role === "system")?.content || "";
   const userMessage = body.messages.find((m: any) => m.role === "user")?.content || "";
@@ -27,9 +26,8 @@ async function callAI(body: { messages: any[] }) {
       { role: "system", content: systemMessage },
       { role: "user", content: userMessage }
     ],
-    model: "mistral", // Mistral is significantly faster for short tasks
-    jsonMode: true,
-    seed: Math.floor(Math.random() * 1000)
+    model: "openai", // OpenAI model is more stable on Pollinations
+    jsonMode: true
   };
 
   const res = await fetch(url, {
@@ -38,6 +36,7 @@ async function callAI(body: { messages: any[] }) {
     body: JSON.stringify(payload),
   });
 
+  if (!res.ok) throw new Error("AI Endpoint Error");
   const text = await res.text();
   return { choices: [{ message: { content: text } }] };
 }
@@ -282,11 +281,11 @@ export const suggestPrompts = createServerFn({ method: "POST" })
       messages: [
         {
           role: "system",
-          content: "Kısa ve öz ol. JSON: { suggestions: [{ title: 'Stil', prompt: 'İngilizce prompt' }] }. Sadece 3 adet."
+          content: "You are an Etsy POD expert. Give 3 professional design prompts in English based on the user's idea. Reply ONLY with JSON: { \"suggestions\": [{ \"title\": \"Style\", \"prompt\": \"Detailed Prompt\" }] }"
         },
         {
           role: "user",
-          content: `Fikir: ${data.idea}`
+          content: `Idea: ${data.idea}`
         }
       ]
     });

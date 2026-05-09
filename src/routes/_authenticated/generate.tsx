@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Wand2, Copy, Download, FileText, Sparkles, Image as ImageIcon, Zap, RefreshCw, Send } from "lucide-react";
+import { Loader2, Wand2, Copy, Download, FileText, Sparkles, Image as ImageIcon, Zap, RefreshCw, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,6 @@ export const Route = createFileRoute("/_authenticated/generate")({
   validateSearch: (s: Record<string, unknown>) => ({
     prompt: typeof s.prompt === "string" ? s.prompt : "",
     niche: typeof s.niche === "string" ? s.niche : "",
-    referenceImageUrl: typeof s.referenceImageUrl === "string" ? s.referenceImageUrl : "",
   }),
 });
 
@@ -47,7 +46,6 @@ function GeneratePage() {
   const [listing, setListing] = useState<any | null>(null);
   const [genLoading, setGenLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
-  const [bulkResults, setBulkResults] = useState<string[]>([]);
 
   const [assistantIdea, setAssistantIdea] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
@@ -65,9 +63,13 @@ function GeneratePage() {
     setSuggestions([]);
     try {
       const res = await suggestFn({ data: { idea: assistantIdea, niche } });
-      setSuggestions(res.suggestions || []);
+      if (res && res.suggestions) {
+        setSuggestions(res.suggestions);
+      } else {
+        toast.error("AI şu an meşgul, lütfen tekrar deneyin.");
+      }
     } catch (e) {
-      toast.error("Hızlı öneri hatası");
+      toast.error("Öneri alınamadı. Lütfen manuel deneyin.");
     } finally {
       setSuggestLoading(false);
     }
@@ -75,12 +77,14 @@ function GeneratePage() {
 
   const generate = async (customPrompt?: string) => {
     const finalPrompt = customPrompt || prompt;
-    if (!finalPrompt.trim() || !user) return;
+    if (!finalPrompt.trim() || !user) {
+      toast.error("Lütfen bir tasarım konusu belirtin.");
+      return;
+    }
 
     setGenLoading(true);
     setImageUrl(null);
     setListing(null);
-    setBulkResults([]);
 
     try {
       const res = await genFn({
@@ -91,11 +95,15 @@ function GeneratePage() {
           niche,
         },
       });
-      setImageUrl(res.imageUrl);
-      setDesignId(res.designId || null);
-      toast.success("Tasarım Hazır!");
+      if (res && res.imageUrl) {
+        setImageUrl(res.imageUrl);
+        setDesignId(res.designId || null);
+        toast.success("Tasarım başarıyla üretildi!");
+      } else {
+        throw new Error("Görsel üretilemedi.");
+      }
     } catch (e: any) {
-      toast.error("Üretim hatası");
+      toast.error("Üretim sırasında bir sorun oluştu.");
     } finally {
       setGenLoading(false);
     }
@@ -117,9 +125,9 @@ function GeneratePage() {
         tiktok_script: res.tiktok_script,
         language,
       });
-      toast.success("SEO Hazır!");
+      toast.success("SEO Analizi Tamamlandı!");
     } catch (e: any) {
-      toast.error("SEO hatası");
+      toast.error("SEO metinleri oluşturulamadı.");
     } finally {
       setListLoading(false);
     }
@@ -127,57 +135,49 @@ function GeneratePage() {
 
   return (
     <div className="space-y-8 pb-16 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-semibold tracking-tight">Turbo Üretim Merkezi</h1>
-        <p className="text-sm text-muted-foreground">Yapay zeka ile anında tasarım ve SEO.</p>
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Tasarım Üret</h1>
+        <p className="text-sm text-muted-foreground mt-1">Fikirlerinizi profesyonel Etsy ürünlerine dönüştürün.</p>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* LEFT: TURBO INPUT */}
+        {/* FORM */}
         <div className="space-y-6">
-          <Card className="border-border/60 shadow-sm">
+          <Card className="border-border/60 shadow-sm overflow-hidden">
             <CardContent className="p-6 space-y-6">
-              {/* Turbo Assistant Input */}
               <div className="space-y-3">
                 <Label className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-2">
-                  <Zap className="h-3 w-3 fill-current" /> Ne üretelim?
+                  <Sparkles className="h-3 w-3" /> AI Asistanı
                 </Label>
-                <div className="relative">
+                <div className="flex gap-2">
                   <Input 
-                    placeholder="örn: kahve içen astronot, kedi deseni..." 
+                    placeholder="Bir fikir yazın (örn: kahve içen astronot)" 
                     value={assistantIdea}
                     onChange={(e) => setAssistantIdea(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSuggest()}
-                    className="h-12 bg-muted/20 border-none text-base pr-12 focus-visible:ring-primary/30"
+                    className="h-11 bg-muted/20"
                   />
-                  <Button 
-                    size="sm" 
-                    onClick={handleSuggest} 
-                    disabled={suggestLoading || !assistantIdea.trim()}
-                    className="absolute right-1.5 top-1.5 h-9 w-9 p-0"
-                  >
+                  <Button onClick={handleSuggest} disabled={suggestLoading || !assistantIdea.trim()}>
                     {suggestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
 
-              {/* Instant Suggestions */}
               {suggestions.length > 0 && (
-                <div className="grid gap-3 animate-in slide-in-from-top-2 duration-300">
-                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Birini Seç ve Anında Üret:</Label>
-                  <div className="space-y-2">
+                <div className="space-y-2 animate-in slide-in-from-top-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Önerilen Promptlar</Label>
+                    <Button variant="ghost" size="xs" onClick={() => setSuggestions([])}><X className="h-3 w-3" /></Button>
+                  </div>
+                  <div className="grid gap-2">
                     {suggestions.map((s, i) => (
                       <button 
                         key={i}
                         onClick={() => { setPrompt(s.prompt); generate(s.prompt); setSuggestions([]); }}
-                        disabled={genLoading}
-                        className="w-full text-left p-3 rounded-xl border border-border/50 bg-muted/10 hover:bg-primary/5 hover:border-primary/30 transition-all flex items-center justify-between group"
+                        className="text-left p-3 rounded-lg border border-border/50 bg-primary/5 hover:border-primary transition-all group"
                       >
-                        <div>
-                          <p className="text-[11px] font-bold text-primary mb-0.5">{s.title}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{s.prompt}</p>
-                        </div>
-                        <Zap className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <p className="text-[10px] font-bold text-primary uppercase mb-0.5">{s.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">{s.prompt}</p>
                       </button>
                     ))}
                   </div>
@@ -186,63 +186,64 @@ function GeneratePage() {
 
               <div className="pt-4 border-t border-border/40 space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Manuel Müdahale</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tasarım Detayları</Label>
                   <Textarea
-                    rows={3}
-                    placeholder="Kendi promptunuzu buraya yazın..."
+                    rows={4}
+                    placeholder="Kendi promptunuzu yazın veya AI asistanını kullanın..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    className="bg-muted/10 border-none resize-none text-sm"
+                    className="bg-muted/10"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <Select value={style} onValueChange={setStyle}>
-                    <SelectTrigger className="bg-muted/10 border-none h-10 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {STYLES.map((s) => <SelectItem key={s} value={s} className="capitalize text-xs">{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    onClick={() => generate()} 
-                    disabled={genLoading || !prompt.trim()} 
-                    className="h-10 text-xs font-bold gap-2"
-                  >
-                    {genLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="h-4 w-4" /> Manuel Üret</>}
-                  </Button>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stil</Label>
+                    <Select value={style} onValueChange={setStyle}>
+                      <SelectTrigger className="bg-muted/10 h-10"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {STYLES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button onClick={() => generate()} disabled={genLoading || !prompt.trim()} className="w-full h-10 font-bold gap-2">
+                      {genLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Zap className="h-4 w-4" /> Üret</>}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* RIGHT: TURBO PREVIEW */}
+        {/* PREVIEW */}
         <div className="space-y-6">
-          <Card className="border-border/60 shadow-sm overflow-hidden min-h-[440px] flex flex-col">
+          <Card className="border-border/60 shadow-sm overflow-hidden min-h-[460px] flex flex-col">
             <CardContent className="p-6 flex-1 flex flex-col">
-              <div className="flex-1 relative aspect-square rounded-2xl overflow-hidden bg-muted/20 border border-border/40 group">
+              <div className="flex-1 relative aspect-square rounded-2xl overflow-hidden bg-muted/20 border border-border/40">
                 {genLoading ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
-                     <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                     <p className="text-[11px] font-bold text-primary uppercase tracking-widest animate-pulse">Turbo Flux Aktif...</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
+                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                     <p className="text-xs font-bold text-primary uppercase tracking-widest animate-pulse">Görsel Üretiliyor...</p>
                   </div>
                 ) : imageUrl ? (
-                   <img src={imageUrl} alt="Result" className="w-full h-full object-contain animate-in fade-in zoom-in-95 duration-500" />
+                   <img src={imageUrl} alt="Result" className="w-full h-full object-contain animate-in fade-in zoom-in-95" />
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground/30">
-                     <ImageIcon className="h-10 w-10 mb-3" />
+                     <ImageIcon className="h-12 w-12 mb-3" />
                      <p className="text-xs font-medium uppercase tracking-wider">Tasarım Bekleniyor</p>
                   </div>
                 )}
               </div>
 
               {imageUrl && !genLoading && (
-                <div className="mt-6 space-y-3 animate-in slide-in-from-bottom-2 duration-300">
+                <div className="mt-6 space-y-3 animate-in slide-in-from-bottom-2">
                    <div className="flex gap-2">
-                      <Button variant="outline" className="flex-1 gap-2 h-10 text-xs" onClick={() => window.open(imageUrl, '_blank')}>
-                         <Download className="h-3.5 w-3.5" /> İndir
+                      <Button variant="outline" className="flex-1 h-10" onClick={() => window.open(imageUrl, '_blank')}>
+                         <Download className="h-4 w-4 mr-2" /> İndir
                       </Button>
-                      <Button variant="outline" className="flex-1 gap-2 h-10 text-xs" onClick={async () => {
+                      <Button variant="outline" className="flex-1 h-10" onClick={async () => {
                          setUpscaleLoading(true);
                          try {
                            const res = await upscaleFn({ data: { imageUrl, prompt } });
@@ -250,11 +251,11 @@ function GeneratePage() {
                            toast.success("HD Yapıldı!");
                          } finally { setUpscaleLoading(false); }
                       }} disabled={upscaleLoading}>
-                         {upscaleLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} HD
+                         {upscaleLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />} HD
                       </Button>
                    </div>
-                   <Button className="w-full gap-2 h-11 text-xs font-bold shadow-md shadow-primary/10" onClick={writeListing} disabled={listLoading}>
-                      {listLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><FileText className="h-3.5 w-3.5" /> SEO & Listing Hazırla</>}
+                   <Button className="w-full h-11 font-bold" onClick={writeListing} disabled={listLoading}>
+                      {listLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />} SEO & Listing Hazırla
                    </Button>
                 </div>
               )}
@@ -264,21 +265,16 @@ function GeneratePage() {
       </div>
 
       {listing && (
-        <Card className="border-border/60 shadow-md animate-in slide-in-from-bottom-4 duration-500 overflow-hidden">
-           <CardContent className="p-0">
-              <div className="p-4 bg-muted/20 border-b border-border/40 flex items-center justify-between">
-                 <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="text-xs font-bold uppercase tracking-wider">SEO Paketi Hazır</span>
-                 </div>
+        <Card className="border-border/60 shadow-md animate-in slide-in-from-bottom-4 overflow-hidden">
+           <CardContent className="p-6 space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Badge className="bg-green-500 hover:bg-green-600">SEO Hazır</Badge>
               </div>
-              <div className="p-6 space-y-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <Section label="Etsy Başlığı" value={listing.title} onCopy={(v) => { navigator.clipboard.writeText(v); toast.success("Kopyalandı"); }} />
-                  <Section label="Etiketler" value={listing.tags.join(", ")} onCopy={(v) => { navigator.clipboard.writeText(v); toast.success("Kopyalandı"); }} />
-                </div>
-                <Section label="Ürün Açıklaması" value={listing.description} onCopy={(v) => { navigator.clipboard.writeText(v); toast.success("Kopyalandı"); }} multiline />
+              <div className="grid gap-6 md:grid-cols-2">
+                <Section label="Etsy Başlığı" value={listing.title} onCopy={(v) => { navigator.clipboard.writeText(v); toast.success("Kopyalandı"); }} />
+                <Section label="Etiketler" value={listing.tags.join(", ")} onCopy={(v) => { navigator.clipboard.writeText(v); toast.success("Kopyalandı"); }} />
               </div>
+              <Section label="Ürün Açıklaması" value={listing.description} onCopy={(v) => { navigator.clipboard.writeText(v); toast.success("Kopyalandı"); }} multiline />
            </CardContent>
         </Card>
       )}
