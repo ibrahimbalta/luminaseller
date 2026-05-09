@@ -8,7 +8,8 @@ import {
   TrendingUp, Wand2, Image as ImageIcon, ArrowRight, 
   ShoppingCart, DollarSign, Package, Sparkles, Search,
   ShoppingBag, Palette, Megaphone, Users, ArrowUpRight, BarChart3,
-  Bell, Zap, Crown, Target, Activity
+  Bell, Zap, Crown, Target, Activity, ZapOff, Globe,
+  LayoutDashboard, MousePointer2, PieChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +41,7 @@ function DashboardPage() {
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
-          .limit(6);
+          .limit(8);
 
         setStats({ 
           trends: t.count ?? 0, 
@@ -58,169 +59,238 @@ function DashboardPage() {
   }, [user]);
 
   const QUICK_ACTIONS = [
-    { title: "Trend Radar", desc: "Karlı nişleri keşfet", icon: TrendingUp, href: "/trends", color: "text-blue-500", bg: "bg-blue-500/10" },
-    { title: "Mockup Studio", desc: "Ürün görselleri üret", icon: ImageIcon, href: "/mockups", color: "text-orange-500", bg: "bg-orange-500/10" },
-    { title: "AI Atölye", desc: "Yeni tasarımlar üret", icon: Wand2, href: "/generate", color: "text-purple-500", bg: "bg-purple-500/10" },
-    { title: "Marketing", desc: "Sosyal medya otomasyonu", icon: Megaphone, href: "/marketing", color: "text-pink-500", bg: "bg-pink-500/10" },
+    { title: "Trend Radar", desc: "Pazarın Nabzı", icon: TrendingUp, href: "/trends", color: "text-cyan-400", bg: "bg-cyan-400/10", border: "border-cyan-400/20" },
+    { title: "Mockup Studio", desc: "Elite Sunum", icon: ImageIcon, href: "/mockups", color: "text-orange-400", bg: "bg-orange-400/10", border: "border-orange-400/20" },
+    { title: "AI Atölye", desc: "Sanat Üretimi", icon: Wand2, href: "/generate", color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20" },
+    { title: "Marketing", desc: "Küresel Erişim", icon: Megaphone, href: "/marketing", color: "text-pink-400", bg: "bg-pink-400/10", border: "border-pink-400/20" },
   ];
 
   return (
-    <div className="space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* ── TOP HERO SECTION ── */}
-      <section className="relative overflow-hidden rounded-[3rem] bg-foreground px-8 py-12 text-background shadow-2xl">
-         <div className="absolute -right-20 -top-20 h-96 w-96 rounded-full bg-primary/10 blur-[100px]" />
-         <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-primary/5 blur-[80px]" />
+    <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      {/* ── HYPER-PREMIUM HERO SECTION ── */}
+      <section className="relative group perspective-1000">
+         {/* Background Glows */}
+         <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-accent/50 rounded-[4rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity duration-1000" />
          
-         <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-4">
-               <div className="flex items-center gap-2">
-                  <Badge className="bg-primary/20 text-primary border-none font-black text-[10px] uppercase tracking-widest px-3">
-                     Elite Satıcı Paneli
-                  </Badge>
-                  {profile?.plan === 'PRO' && <Crown className="h-4 w-4 text-yellow-500 animate-bounce" />}
-               </div>
-               <h1 className="text-4xl font-black tracking-tighter sm:text-6xl uppercase italic">
-                  Merhaba, <span className="text-primary">{profile?.display_name || "Satıcı"}</span>
-               </h1>
-               <p className="max-w-md text-sm font-bold opacity-70 italic leading-relaxed">
-                  Lumina Seller ile bugün toplam <span className="text-primary font-black underline">₺{stats.revenue}</span> kazandınız. 
-                  Yapay zeka mağazanız için 3 yeni trend keşfetti.
-               </p>
+         <div className="relative overflow-hidden rounded-[4rem] bg-[#0A0A0A] border border-white/5 shadow-[0_0_100px_rgba(0,0,0,0.8)]">
+            {/* Animated Mesh Background */}
+            <div className="absolute inset-0 opacity-20">
+               <div className="absolute top-0 -left-20 w-96 h-96 bg-primary/30 rounded-full blur-[120px] animate-pulse" />
+               <div className="absolute bottom-0 -right-20 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse delay-700" />
             </div>
-            
-            <div className="flex flex-wrap gap-4">
-               <Button asChild size="lg" className="h-14 rounded-2xl bg-primary px-8 font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-                  <Link to="/generate"><Sparkles className="mr-2 h-5 w-5" /> Tasarım Başlat</Link>
-               </Button>
-               <Button variant="outline" size="lg" className="h-14 rounded-2xl border-white/10 bg-white/5 px-8 font-black uppercase tracking-widest text-white hover:bg-white/10">
-                  <Link to="/trends">Trendleri Tara</Link>
-               </Button>
+
+            <div className="relative z-10 px-12 py-20 flex flex-col lg:flex-row items-center justify-between gap-12">
+               <div className="space-y-8 max-w-2xl text-center lg:text-left">
+                  <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                     <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                     </span>
+                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/70">Elite Merchant OS v4.0</span>
+                  </div>
+                  
+                  <div className="space-y-4">
+                     <h1 className="text-6xl sm:text-8xl font-black tracking-tighter leading-none italic uppercase">
+                        <span className="text-white">MERHABA,</span><br />
+                        <span className="bg-gradient-to-r from-primary via-white to-primary bg-clip-text text-transparent animate-gradient-x">{profile?.display_name || "SATICI"}</span>
+                     </h1>
+                     <p className="text-lg font-bold text-white/40 italic leading-relaxed max-w-lg">
+                        Lumina Intelligence bugün mağazanız için <span className="text-white underline decoration-primary decoration-4">7 yeni büyüme sinyali</span> yakaladı. 
+                        Pazar payınız son 24 saatte %12 arttı.
+                     </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 pt-4">
+                     <Button asChild size="lg" className="h-16 px-12 rounded-2xl bg-primary text-white font-black uppercase tracking-widest shadow-[0_10px_40px_rgba(var(--primary),0.3)] hover:scale-105 transition-all group/btn">
+                        <Link to="/generate">
+                           <Sparkles className="mr-3 h-6 w-6 group-hover/btn:rotate-12 transition-transform" /> 
+                           YENİ SANAT BAŞLAT
+                        </Link>
+                     </Button>
+                     <Button variant="ghost" size="lg" className="h-16 px-12 rounded-2xl border border-white/10 text-white font-black uppercase tracking-widest hover:bg-white/5">
+                        <Link to="/trends" className="flex items-center gap-3">
+                           <Globe className="h-5 w-5 opacity-50" /> TRENDLERİ TARA
+                        </Link>
+                     </Button>
+                  </div>
+               </div>
+
+               {/* Hero Visual: Pulsing Performance Orb */}
+               <div className="relative hidden lg:block">
+                  <div className="h-80 w-80 rounded-full bg-gradient-to-br from-primary/20 to-transparent border border-white/10 flex items-center justify-center relative animate-float">
+                     <div className="absolute inset-0 rounded-full border border-primary/20 animate-ping opacity-20" />
+                     <div className="text-center space-y-2">
+                        <div className="text-5xl font-black tracking-tighter text-white">₺{stats.revenue}</div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-primary">Günlük Net Akış</div>
+                     </div>
+                     {/* Floating Orbs */}
+                     <div className="absolute -top-4 -right-4 h-16 w-16 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center rotate-12 shadow-2xl">
+                        <TrendingUp className="h-8 w-8 text-primary" />
+                     </div>
+                  </div>
+               </div>
             </div>
          </div>
       </section>
 
-      {/* ── STATS GRID ── */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {/* ── THE ORB STATS ── */}
+      <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
          {[
-           { label: "Canlı Satışlar", value: stats.sales, icon: ShoppingBag, color: "text-blue-500", bg: "bg-blue-500/5" },
-           { label: "Net Kazanç", value: `₺${stats.revenue}`, icon: DollarSign, color: "text-green-500", bg: "bg-green-500/5" },
-           { label: "Aktif Tasarım", value: stats.designs, icon: Palette, color: "text-purple-500", bg: "bg-purple-500/5" },
-           { label: "AI Kredi", value: profile?.credits || 0, icon: Zap, color: "text-yellow-500", bg: "bg-yellow-500/5" },
+           { label: "Canlı Sipariş", value: stats.sales, icon: ShoppingBag, color: "text-cyan-400", bg: "from-cyan-400/20", trend: "+24%" },
+           { label: "Net Kazanç", value: `₺${stats.revenue}`, icon: DollarSign, color: "text-emerald-400", bg: "from-emerald-400/20", trend: "+18%" },
+           { label: "Üretilen Tasarım", value: stats.designs, icon: Palette, color: "text-violet-400", bg: "from-violet-400/20", trend: "Elite" },
+           { label: "AI Gücü", value: profile?.credits || 0, icon: Zap, color: "text-amber-400", bg: "from-amber-400/20", trend: "Aktif" },
          ].map((s, i) => (
-           <Card key={i} className="group border-none bg-card/50 shadow-sm backdrop-blur-md hover:shadow-2xl transition-all duration-500 rounded-[2rem] overflow-hidden">
-             <CardContent className="p-8">
-                <div className={`mb-6 h-12 w-12 rounded-2xl ${s.bg} flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-6`}>
-                   <s.icon className={`h-6 w-6 ${s.color}`} />
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">{s.label}</p>
-                <h3 className="mt-2 text-4xl font-black tracking-tighter">{s.value}</h3>
-                <div className="mt-4 h-1 w-full bg-muted rounded-full overflow-hidden">
-                   <div className={`h-full ${s.bg.replace('/5', '')} animate-pulse`} style={{ width: '65%' }} />
-                </div>
-             </CardContent>
-           </Card>
+           <div key={i} className="group relative overflow-hidden rounded-[2.5rem] bg-white/[0.03] border border-white/5 p-8 transition-all duration-700 hover:bg-white/[0.06] hover:-translate-y-2 hover:shadow-2xl">
+              <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${s.bg} to-transparent blur-3xl opacity-0 group-hover:opacity-100 transition-opacity`} />
+              
+              <div className="relative z-10 flex flex-col gap-6">
+                 <div className="flex items-center justify-between">
+                    <div className={`h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-12`}>
+                       <s.icon className={`h-7 w-7 ${s.color}`} />
+                    </div>
+                    <Badge variant="outline" className={`text-[10px] font-black border-none ${s.color} bg-white/5`}>
+                       {s.trend}
+                    </Badge>
+                 </div>
+                 
+                 <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</p>
+                    <h3 className="text-4xl font-black tracking-tighter text-white">{s.value}</h3>
+                 </div>
+
+                 {/* Simulated Micro-Graph */}
+                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className={`h-full bg-gradient-to-r from-transparent via-${s.color.split('-')[1]}-400 to-transparent w-full animate-shimmer`} />
+                 </div>
+              </div>
+           </div>
          ))}
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-         {/* ── MAIN CONTENT ── */}
-         <div className="lg:col-span-2 space-y-10">
-            {/* Quick Actions */}
-            <section className="space-y-6">
-               <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-black uppercase tracking-tighter italic flex items-center gap-2">
-                     <Target className="h-5 w-5 text-primary" /> Hızlı Erişim
-                  </h2>
+      <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
+         {/* ── LEFT: ANALYTICS & ACTIONS ── */}
+         <div className="space-y-12">
+            {/* Quick Actions Grid */}
+            <section className="space-y-8">
+               <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-black uppercase tracking-tighter italic text-white">Elite Araçlar</h2>
+                  <div className="h-[2px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                </div>
-               <div className="grid gap-4 sm:grid-cols-2">
+               <div className="grid gap-6 sm:grid-cols-2">
                   {QUICK_ACTIONS.map((action, i) => (
                     <Link key={i} to={action.href} className="group">
-                       <div className="flex items-center gap-4 rounded-[2rem] border border-border/50 bg-card p-6 transition-all duration-500 hover:border-primary/40 hover:shadow-2xl hover:-translate-y-1">
-                          <div className={`h-16 w-16 rounded-[1.5rem] ${action.bg} flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all`}>
-                             <action.icon className="h-8 w-8" />
+                       <div className={`h-full flex items-center gap-6 rounded-[2.5rem] border ${action.border} bg-white/[0.02] p-8 transition-all duration-500 hover:bg-white/[0.05] hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]`}>
+                          <div className={`h-20 w-20 rounded-[2rem] ${action.bg} flex items-center justify-center group-hover:scale-110 transition-all shadow-inner`}>
+                             <action.icon className={`h-10 w-10 ${action.color}`} />
                           </div>
-                          <div className="flex-1">
-                             <h3 className="font-black text-lg uppercase tracking-tight">{action.title}</h3>
-                             <p className="text-[10px] font-bold text-muted-foreground italic">{action.desc}</p>
+                          <div className="flex-1 space-y-1">
+                             <h3 className="font-black text-xl uppercase tracking-tight text-white">{action.title}</h3>
+                             <p className="text-[11px] font-bold text-white/40 italic">{action.desc}</p>
                           </div>
-                          <ArrowRight className="h-5 w-5 opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
+                          <div className="h-12 w-12 rounded-full border border-white/5 flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-all">
+                             <ArrowRight className="h-5 w-5 text-white/20 group-hover:text-white" />
+                          </div>
                        </div>
                     </Link>
                   ))}
                </div>
             </section>
 
-            {/* Performance Chart Simulation */}
-            <section className="rounded-[3rem] border border-border/50 bg-card/30 p-10 shadow-sm">
-               <div className="flex items-center justify-between mb-8">
-                  <div className="space-y-1">
-                     <h2 className="text-xl font-black uppercase tracking-tighter italic">Satış Performansı</h2>
-                     <p className="text-[10px] font-bold text-muted-foreground italic uppercase">Son 7 Günlük Analiz</p>
-                  </div>
-                  <Badge variant="outline" className="font-black text-[10px] uppercase border-primary/20 text-primary">Canlı Veri</Badge>
+            {/* Glowing Wave Graph Section */}
+            <section className="relative p-12 rounded-[4rem] bg-[#0A0A0A] border border-white/5 overflow-hidden shadow-2xl">
+               <div className="absolute top-0 right-0 p-12 opacity-5">
+                  <BarChart3 className="h-64 w-64 text-white" />
                </div>
                
-               <div className="flex h-48 items-end gap-3 sm:gap-6">
-                  {[45, 65, 32, 85, 55, 95, 75].map((val, i) => (
-                    <div key={i} className="group relative flex-1 flex flex-col items-center gap-3">
-                       <div className="absolute -top-8 scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all bg-primary text-white text-[10px] font-black px-2 py-1 rounded-md">
-                          ₺{val * 10}
+               <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-12">
+                  <div className="space-y-6">
+                     <div className="space-y-2">
+                        <h2 className="text-3xl font-black uppercase tracking-tighter italic text-white">Performans Matrisi</h2>
+                        <p className="text-xs font-bold text-white/30 italic uppercase tracking-[0.2em]">Haftalık Gelir Dalgalanması</p>
+                     </div>
+                     <div className="flex items-center gap-8">
+                        <div>
+                           <p className="text-[10px] font-black text-white/40 uppercase">En Yüksek</p>
+                           <p className="text-2xl font-black text-emerald-400">₺{stats.sales * 150 || 1200}</p>
+                        </div>
+                        <div className="h-10 w-[1px] bg-white/10" />
+                        <div>
+                           <p className="text-[10px] font-black text-white/40 uppercase">Dönüşüm</p>
+                           <p className="text-2xl font-black text-primary">%8.4</p>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* The Wave Chart (Simulated with beautiful SVG) */}
+                  <div className="flex-1 h-32 flex items-end gap-4 px-4">
+                     {[30, 45, 60, 40, 80, 65, 95].map((val, i) => (
+                       <div key={i} className="group relative flex-1">
+                          <div 
+                           className="w-full bg-gradient-to-t from-primary/10 via-primary/40 to-primary rounded-full transition-all duration-1000 group-hover:via-white group-hover:shadow-[0_0_20px_rgba(var(--primary),0.5)]" 
+                           style={{ height: `${val}%`, transitionDelay: `${i * 100}ms` }} 
+                          />
+                          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[9px] font-black text-white/20 uppercase">
+                             {['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][i]}
+                          </div>
                        </div>
-                       <div 
-                        className="w-full bg-muted rounded-t-xl group-hover:bg-primary transition-all duration-700 cursor-pointer" 
-                        style={{ height: `${val}%` }} 
-                       />
-                       <span className="text-[10px] font-black text-muted-foreground uppercase">{['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'][i]}</span>
-                    </div>
-                  ))}
+                     ))}
+                  </div>
                </div>
             </section>
          </div>
 
-         {/* ── SIDEBAR ── */}
-         <div className="space-y-8">
+         {/* ── RIGHT: INTELLIGENCE & ACTIVITY ── */}
+         <div className="space-y-12">
             <ProfitCalculator />
 
-            {/* AI Insights */}
-            <Card className="border-none bg-foreground text-background shadow-2xl rounded-[3rem] overflow-hidden group">
-               <div className="absolute -right-6 -top-6 h-32 w-32 bg-primary/20 blur-[50px] group-hover:scale-150 transition-transform duration-1000" />
-               <CardContent className="p-10 space-y-6 relative z-10">
-                  <div className="flex items-center gap-3">
-                     <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center">
-                        <Zap className="h-6 w-6 text-white" />
+            {/* AI Mastermind Card */}
+            <Card className="relative border-none bg-gradient-to-br from-primary via-[#1A1A1A] to-black shadow-2xl rounded-[3.5rem] overflow-hidden group">
+               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+               <CardContent className="p-10 space-y-8 relative z-10">
+                  <div className="flex items-center gap-4">
+                     <div className="h-14 w-14 bg-white/10 backdrop-blur-2xl rounded-[1.5rem] flex items-center justify-center border border-white/20">
+                        <Zap className="h-8 w-8 text-primary animate-bounce" />
                      </div>
-                     <span className="text-[10px] font-black uppercase tracking-widest italic opacity-70 text-primary">AI Önerisi</span>
+                     <div>
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary italic">Intelligence Alert</span>
+                        <h3 className="text-2xl font-black italic tracking-tighter text-white uppercase">Mastermind</h3>
+                     </div>
                   </div>
-                  <h3 className="text-2xl font-black italic tracking-tighter leading-tight uppercase">
-                     Kupa satışlarınızda <span className="text-primary">Retro Vibes</span> rüzgarı esiyor.
-                  </h3>
-                  <p className="text-xs font-bold opacity-60 leading-relaxed italic">
-                     Verilerimiz bu hafta %35 daha fazla dönüşüm öngörüyor. Yeni bir tasarım serisi başlatmak ister misiniz?
+                  
+                  <p className="text-sm font-bold text-white/70 leading-relaxed italic border-l-4 border-primary pl-6">
+                     "Kupa kategorisindeki **Cyberpunk Aesthetic** aramaları son 12 saatte küresel çapta %80 patlama yaptı. Bu akıma ilk katılanlardan olun!"
                   </p>
-                  <Button variant="secondary" className="w-full h-12 font-black uppercase tracking-widest shadow-xl rounded-2xl">
-                     <Link to="/generate">Atölyeye Git</Link>
+
+                  <Button variant="secondary" className="w-full h-16 font-black uppercase tracking-widest shadow-2xl rounded-2xl bg-white text-black hover:bg-primary hover:text-white border-none transition-all">
+                     <Link to="/generate" className="flex items-center gap-3">
+                        <Target className="h-5 w-5" /> ŞİMDİ DOMİNE ET
+                     </Link>
                   </Button>
                </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <section className="space-y-6">
-               <h2 className="text-sm font-black uppercase tracking-[0.2em] italic text-muted-foreground flex items-center gap-2 px-2">
-                  <Activity className="h-4 w-4" /> Son Etkinlikler
-               </h2>
+            {/* Live Activity Feed */}
+            <section className="space-y-8 px-4">
+               <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-black uppercase tracking-[0.4em] italic text-white/30 flex items-center gap-3">
+                     <Activity className="h-4 w-4 text-primary" /> Canlı Sistem Akışı
+                  </h2>
+               </div>
                <div className="space-y-4">
                   {[
-                    { type: 'order', text: 'Yeni sipariş alındı! #ORD-9921', time: '2 dk önce', icon: ShoppingBag, color: 'text-blue-500' },
-                    { type: 'design', text: 'Tasarım HD kalitesine yükseltildi', time: '15 dk önce', icon: Sparkles, color: 'text-purple-500' },
-                    { type: 'listing', text: 'SEO iyileştirmesi tamamlandı', time: '1 saat önce', icon: Target, color: 'text-green-500' },
+                    { text: 'Yurt dışı siparişi alındı: #US-882', time: '1m', icon: Globe, color: 'text-cyan-400' },
+                    { text: 'HD upscale işlemi başarıyla bitti', time: '12m', icon: Sparkles, color: 'text-purple-400' },
+                    { text: 'Pinterest API senkronize edildi', time: '1h', icon: MousePointer2, color: 'text-pink-400' },
+                    { text: 'Haftalık kâr raporu hazır', time: '3h', icon: PieChart, color: 'text-emerald-400' },
                   ].map((act, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/20 transition-all cursor-pointer group">
-                       <div className={`h-10 w-10 rounded-xl bg-muted flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                          <act.icon className={`h-4 w-4 ${act.color}`} />
+                    <div key={i} className="flex items-center gap-5 p-5 rounded-[1.5rem] bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all cursor-pointer group">
+                       <div className={`h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-6`}>
+                          <act.icon className={`h-5 w-5 ${act.color}`} />
                        </div>
                        <div className="flex-1">
-                          <p className="text-xs font-bold italic">{act.text}</p>
-                          <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">{act.time}</p>
+                          <p className="text-xs font-bold italic text-white/80">{act.text}</p>
+                          <p className="text-[9px] font-black uppercase tracking-widest text-white/20 mt-1">{act.time} Önce</p>
                        </div>
                     </div>
                   ))}
@@ -236,7 +306,7 @@ function ProfitCalculator() {
   const [price, setPrice] = useState<number>(250);
   const [cost, setCost] = useState<number>(100);
   
-  const listingFee = 0.20 * 33; // Mock conversion for TL (1 USD = 33 TL approx)
+  const listingFee = 0.20 * 33; 
   const transactionFee = price * 0.065;
   const processingFee = (price * 0.04) + (0.30 * 33);
   const totalFees = listingFee + transactionFee + processingFee;
@@ -244,52 +314,60 @@ function ProfitCalculator() {
   const margin = (netProfit / price) * 100;
 
   return (
-    <Card className="border-none bg-card shadow-xl rounded-[2.5rem] overflow-hidden">
-       <CardHeader className="bg-primary/5 pb-4">
-          <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 italic">
-             <DollarSign className="h-4 w-4 text-primary" /> Etsy Kâr Hesaplayıcı
+    <Card className="border-none bg-[#0D0D0D] shadow-2xl rounded-[3rem] overflow-hidden group border border-white/5">
+       <CardHeader className="bg-white/5 pb-6 pt-10 px-10 border-b border-white/5">
+          <CardTitle className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3 italic text-primary">
+             <DollarSign className="h-5 w-5 animate-pulse" /> Kâr Analizörü
           </CardTitle>
        </CardHeader>
-       <CardContent className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Satış (₺)</label>
-                <input 
-                  type="number" 
-                  value={price} 
-                  onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full h-10 bg-muted/50 rounded-xl px-3 font-black text-sm border-none focus:ring-2 ring-primary/20"
-                />
+       <CardContent className="p-10 space-y-8">
+          <div className="grid grid-cols-2 gap-6">
+             <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-2">Etiket Fiyatı</label>
+                <div className="relative">
+                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 font-black">₺</span>
+                   <input 
+                     type="number" 
+                     value={price} 
+                     onChange={(e) => setPrice(Number(e.target.value))}
+                     className="w-full h-14 bg-white/5 rounded-2xl pl-10 pr-4 font-black text-lg text-white border border-white/5 focus:ring-2 ring-primary/20 transition-all outline-none"
+                   />
+                </div>
              </div>
-             <div className="space-y-1">
-                <label className="text-[9px] font-black uppercase text-muted-foreground ml-1">Maliyet (₺)</label>
-                <input 
-                  type="number" 
-                  value={cost} 
-                  onChange={(e) => setCost(Number(e.target.value))}
-                  className="w-full h-10 bg-muted/50 rounded-xl px-3 font-black text-sm border-none focus:ring-2 ring-primary/20"
-                />
+             <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase text-white/40 tracking-widest ml-2">Net Maliyet</label>
+                <div className="relative">
+                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 font-black">₺</span>
+                   <input 
+                     type="number" 
+                     value={cost} 
+                     onChange={(e) => setCost(Number(e.target.value))}
+                     className="w-full h-14 bg-white/5 rounded-2xl pl-10 pr-4 font-black text-lg text-white border border-white/5 focus:ring-2 ring-primary/20 transition-all outline-none"
+                   />
+                </div>
              </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-foreground text-background space-y-3">
-             <div className="flex justify-between items-center text-[10px] font-bold opacity-60 uppercase">
-                <span>Tahmini Kesinti:</span>
+          <div className="p-8 rounded-[2rem] bg-white text-black space-y-6 shadow-[0_20px_50px_rgba(255,255,255,0.1)]">
+             <div className="flex justify-between items-center text-[10px] font-black uppercase opacity-40">
+                <span>Tahmini Kesinti Paketi</span>
                 <span>₺{totalFees.toFixed(2)}</span>
              </div>
-             <div className="h-[1px] bg-white/10" />
+             <div className="h-[1px] bg-black/10" />
              <div className="flex justify-between items-end">
                 <div>
-                   <p className="text-[10px] font-black uppercase opacity-60">Net Kâr</p>
-                   <p className="text-2xl font-black tracking-tighter text-primary">₺{netProfit.toFixed(2)}</p>
+                   <p className="text-[10px] font-black uppercase opacity-40 mb-1">PROJEKSİYON</p>
+                   <p className="text-4xl font-black tracking-tighter text-black">₺{netProfit.toFixed(2)}</p>
                 </div>
-                <Badge className="bg-primary/20 text-primary border-none font-black mb-1">
-                   %{isNaN(margin) ? 0 : margin.toFixed(0)} Marj
-                </Badge>
+                <div className="flex flex-col items-end gap-1">
+                   <Badge className="bg-black text-white border-none font-black text-[10px] px-3 py-1">
+                      %{isNaN(margin) ? 0 : margin.toFixed(0)} MARJ
+                   </Badge>
+                </div>
              </div>
           </div>
-          <p className="text-[8px] text-muted-foreground italic text-center leading-tight">
-             *Hesaplamalar %6.5 işlem ve %4 + 0.30$ ödeme komisyonu (Etsy Türkiye standartları) baz alınarak yapılmıştır.
+          <p className="text-[9px] text-white/20 italic text-center font-bold tracking-tight">
+             Etsy Türkiye %6.5 İşlem + %4 Ödeme komisyonu standartlarına göredir.
           </p>
        </CardContent>
     </Card>
