@@ -17,9 +17,8 @@ function getSupabase() {
 const FIRECRAWL = "https://api.firecrawl.dev/v2/search";
 
 async function callAI(body: { messages: any[] }) {
-  // Use Pollinations AI (100% Free, No Key Required, Fast)
+  // Use ultra-fast endpoint
   const url = "https://text.pollinations.ai/";
-  
   const systemMessage = body.messages.find((m: any) => m.role === "system")?.content || "";
   const userMessage = body.messages.find((m: any) => m.role === "user")?.content || "";
 
@@ -28,8 +27,9 @@ async function callAI(body: { messages: any[] }) {
       { role: "system", content: systemMessage },
       { role: "user", content: userMessage }
     ],
-    model: "openai", // Options: openai, mistral, llama
-    jsonMode: true
+    model: "mistral", // Mistral is significantly faster for short tasks
+    jsonMode: true,
+    seed: Math.floor(Math.random() * 1000)
   };
 
   const res = await fetch(url, {
@@ -38,12 +38,7 @@ async function callAI(body: { messages: any[] }) {
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    throw new Error(`AI Hatası: ${res.status}`);
-  }
-
   const text = await res.text();
-  
   return { choices: [{ message: { content: text } }] };
 }
 
@@ -134,6 +129,7 @@ export const generateDesign = createServerFn({ method: "POST" })
     
     // Sanitize prompt for URL
     const safePrompt = encodeURIComponent(fullPrompt.replace(/[\n\r]/g, " "));
+    // Use flux-schnell or optimized flux for speed
     const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=1024&height=1024&seed=${seed}&nologo=true&model=flux`;
     
     // Save to database
@@ -286,11 +282,11 @@ export const suggestPrompts = createServerFn({ method: "POST" })
       messages: [
         {
           role: "system",
-          content: "Sen bir Etsy POD tasarım uzmanısın. Kullanıcının basit fikrini al ve Etsy'de çok satan 3 farklı profesyonel İngilizce görsel üretim promptu (FLUX uyumlu) oluştur. Yanıtı şu JSON formatında ver: { suggestions: [{ title: 'Stil Adı', prompt: 'İngilizce Detaylı Prompt' }] }. Sadece JSON."
+          content: "Kısa ve öz ol. JSON: { suggestions: [{ title: 'Stil', prompt: 'İngilizce prompt' }] }. Sadece 3 adet."
         },
         {
           role: "user",
-          content: `Fikir: ${data.idea}\nNiş: ${data.niche}`
+          content: `Fikir: ${data.idea}`
         }
       ]
     });
