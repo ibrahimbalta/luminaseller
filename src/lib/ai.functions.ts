@@ -189,25 +189,5 @@ export const getUserDesigns = createServerFn({ method: "GET" })
     return designs || [];
   });
 
-export const fetchEtsyOrders = createServerFn({ method: "POST" })
-  .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
-  .handler(async ({ data }) => {
-    return {
-      stats: { totalSales: 42, totalRevenue: "18,450", activeOrders: 3 },
-      orders: [
-        { id: "ORD-9921", customer: "Alice Johnson", date: "2 saat önce", items: 2, total: "850", status: "Paid" },
-      ],
-      isDemo: true
-    };
-  });
 
-export const fetchEtsyListings = createServerFn({ method: "POST" })
-  .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
-  .handler(async ({ data }) => {
-    return {
-      listings: [
-        { id: "123", title: "Retro Coffee T-Shirt", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400", price: "450", stock: 15, views: 120 },
-      ],
-      isDemo: true
-    };
-  });
+

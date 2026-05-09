@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+
 import { getUserDesigns } from "@/lib/ai.functions";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const PRODUCTS = [
 
 function MockupStudio() {
   const { user } = useAuth();
-  const getDesigns = useServerFn(getUserDesigns);
+
   const [selectedDesign, setSelectedDesign] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState(PRODUCTS[0]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -37,7 +37,7 @@ function MockupStudio() {
 
   const { data: designs, isLoading } = useQuery({
     queryKey: ["user_designs", user?.id],
-    queryFn: () => getDesigns({ data: { userId: user!.id } }),
+    queryFn: () => getUserDesigns({ data: { userId: user!.id } }),
     enabled: !!user,
   });
 

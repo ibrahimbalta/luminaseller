@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { fetchEtsyListings } from "@/lib/etsy.functions";
-import { useServerFn } from "@tanstack/react-start";
+import { generateListing } from "@/lib/ai.functions";
+
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,12 +17,9 @@ export const Route = createFileRoute("/_authenticated/inventory")({
   component: InventoryPage,
 });
 
-import { generateListing } from "@/lib/ai.functions";
-
 function InventoryPage() {
   const { user } = useAuth();
-  const getListings = useServerFn(fetchEtsyListings);
-  const genListing = useServerFn(generateListing);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [optimizingId, setOptimizingId] = useState<string | null>(null);
 
@@ -29,7 +27,7 @@ function InventoryPage() {
     queryKey: ["etsy_listings", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      return await getListings({ data: { userId: user.id } });
+      return await fetchEtsyListings({ data: { userId: user.id } });
     },
     enabled: !!user,
   });
@@ -37,7 +35,7 @@ function InventoryPage() {
   const handleOptimize = async (listing: any) => {
     setOptimizingId(listing.id);
     try {
-      const res = await genListing({ 
+      const res = await generateListing({ 
         data: { 
           prompt: listing.title, 
           niche: "Etsy POD", 

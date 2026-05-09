@@ -1,7 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { handleEtsyCallback } from "@/lib/etsy.functions";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -18,32 +16,37 @@ function EtsyCallbackPage() {
   const { code, state } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const handleCallback = useServerFn(handleEtsyCallback);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
-    async function process() {
-      const savedState = localStorage.getItem("etsy_state");
-      const verifier = localStorage.getItem("etsy_verifier");
+    if (!user || processing) return;
 
-      if (!code || !user || state !== savedState || !verifier) {
-        toast.error("Bağlantı doğrulaması başarısız.");
-        navigate({ to: "/settings" });
-        return;
-      }
+    const savedState = localStorage.getItem("etsy_state");
+    const verifier = localStorage.getItem("etsy_verifier");
 
-      try {
-        await handleCallback({ data: { code, verifier, userId: user.id } });
+    if (!code || state !== savedState || !verifier) {
+      toast.error("Bağlantı doğrulaması başarısız.");
+      navigate({ to: "/settings" });
+      return;
+    }
+
+    setProcessing(true);
+
+    // Dynamic import to avoid code-splitter issues with server functions in route files
+    import("@/lib/etsy.functions").then(({ handleEtsyCallback }) => {
+      return handleEtsyCallback({ data: { code, verifier, userId: user.id } });
+    })
+      .then(() => {
         toast.success("Etsy dükkanınız başarıyla bağlandı!");
         localStorage.removeItem("etsy_state");
         localStorage.removeItem("etsy_verifier");
         navigate({ to: "/settings" });
-      } catch (e: any) {
-        toast.error("Hata: " + e.message);
+      })
+      .catch((e: any) => {
+        toast.error("Hata: " + (e?.message || "Bilinmeyen hata"));
         navigate({ to: "/settings" });
-      }
-    }
-
-    if (user) process();
+      })
+      .finally(() => setProcessing(false));
   }, [code, state, user]);
 
   return (

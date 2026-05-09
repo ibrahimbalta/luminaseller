@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { fetchEtsyOrders } from "@/lib/etsy.functions";
-import { useServerFn } from "@tanstack/react-start";
+
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,13 +14,13 @@ export const Route = createFileRoute("/_authenticated/orders")({
 
 function OrdersPage() {
   const { user } = useAuth();
-  const getOrders = useServerFn(fetchEtsyOrders);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["etsy_orders", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      return await getOrders({ data: { userId: user.id } });
+      return await fetchEtsyOrders({ data: { userId: user.id } });
     },
     enabled: !!user,
   });

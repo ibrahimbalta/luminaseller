@@ -16,6 +16,7 @@ import { Route as AuthenticatedTrendsRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated/pricing'
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
+import { Route as AuthenticatedMockupsRouteImport } from './routes/_authenticated/mockups'
 import { Route as AuthenticatedMarketingRouteImport } from './routes/_authenticated/marketing'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedGenerateRouteImport } from './routes/_authenticated/generate'
@@ -57,6 +58,11 @@ const AuthenticatedOrdersRoute = AuthenticatedOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedMockupsRoute = AuthenticatedMockupsRouteImport.update({
+  id: '/mockups',
+  path: '/mockups',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedMarketingRoute = AuthenticatedMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/generate': typeof AuthenticatedGenerateRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/marketing': typeof AuthenticatedMarketingRoute
+  '/mockups': typeof AuthenticatedMockupsRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/generate': typeof AuthenticatedGenerateRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/marketing': typeof AuthenticatedMarketingRoute
+  '/mockups': typeof AuthenticatedMockupsRoute
   '/orders': typeof AuthenticatedOrdersRoute
   '/pricing': typeof AuthenticatedPricingRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/_authenticated/generate': typeof AuthenticatedGenerateRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/marketing': typeof AuthenticatedMarketingRoute
+  '/_authenticated/mockups': typeof AuthenticatedMockupsRoute
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/inventory'
     | '/marketing'
+    | '/mockups'
     | '/orders'
     | '/pricing'
     | '/settings'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/generate'
     | '/inventory'
     | '/marketing'
+    | '/mockups'
     | '/orders'
     | '/pricing'
     | '/settings'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/_authenticated/generate'
     | '/_authenticated/inventory'
     | '/_authenticated/marketing'
+    | '/_authenticated/mockups'
     | '/_authenticated/orders'
     | '/_authenticated/pricing'
     | '/_authenticated/settings'
@@ -236,6 +248,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOrdersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/mockups': {
+      id: '/_authenticated/mockups'
+      path: '/mockups'
+      fullPath: '/mockups'
+      preLoaderRoute: typeof AuthenticatedMockupsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/marketing': {
       id: '/_authenticated/marketing'
       path: '/marketing'
@@ -287,6 +306,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGenerateRoute: typeof AuthenticatedGenerateRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedMarketingRoute: typeof AuthenticatedMarketingRoute
+  AuthenticatedMockupsRoute: typeof AuthenticatedMockupsRoute
   AuthenticatedOrdersRoute: typeof AuthenticatedOrdersRoute
   AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -299,6 +319,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGenerateRoute: AuthenticatedGenerateRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedMarketingRoute: AuthenticatedMarketingRoute,
+  AuthenticatedMockupsRoute: AuthenticatedMockupsRoute,
   AuthenticatedOrdersRoute: AuthenticatedOrdersRoute,
   AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,

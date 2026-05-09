@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { fetchEtsyOrders } from "@/lib/ai.functions";
-import { useServerFn } from "@tanstack/react-start";
+import { fetchEtsyOrders } from "@/lib/etsy.functions";
+
 import {
   TrendingUp, Wand2, Image as ImageIcon, ArrowRight,
   DollarSign, Sparkles, ShoppingBag, Palette, Megaphone,
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const { user, profile } = useAuth();
-  const getOrders = useServerFn(fetchEtsyOrders);
+
   const [stats, setStats] = useState({ trends: 0, designs: 0, sales: 0, revenue: "0" });
   const [recentDesigns, setRecentDesigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ function DashboardPage() {
         const [t, d, ordersData] = await Promise.all([
           supabase.from("trend_searches").select("id", { count: "exact", head: true }),
           supabase.from("designs").select("id", { count: "exact", head: true }),
-          getOrders({ data: { userId: user.id } }).catch(() => null),
+          fetchEtsyOrders({ data: { userId: user.id } }).catch(() => null),
         ]);
 
         const { data: recent } = await supabase

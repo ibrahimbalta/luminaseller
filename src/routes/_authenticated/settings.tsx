@@ -9,7 +9,7 @@ import { Settings as SettingsIcon, CreditCard, User, LogOut, Check, Loader2, Ref
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getEtsyAuthUrl } from "@/lib/etsy.functions";
-import { useServerFn } from "@tanstack/react-start";
+
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 
@@ -21,7 +21,7 @@ function SettingsPage() {
   const { user, profile, loading: authLoading, refreshProfile, signOut } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [loading, setLoading] = useState(false);
-  const getAuthUrl = useServerFn(getEtsyAuthUrl);
+
 
   const { data: shop } = useQuery({
     queryKey: ["etsy_shop", user?.id],
@@ -35,7 +35,7 @@ function SettingsPage() {
 
   const connectEtsy = async () => {
     try {
-      const { url, verifier, state } = await getAuthUrl();
+      const { url, verifier, state } = await getEtsyAuthUrl();
       localStorage.setItem("etsy_verifier", verifier);
       localStorage.setItem("etsy_state", state);
       window.location.href = url;

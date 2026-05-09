@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+
 import { generateDesign, generateListing, upscaleImage, suggestPrompts } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -51,10 +51,7 @@ function GeneratePage() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [suggestLoading, setSuggestLoading] = useState(false);
 
-  const genFn = useServerFn(generateDesign);
-  const listFn = useServerFn(generateListing);
-  const upscaleFn = useServerFn(upscaleImage);
-  const suggestFn = useServerFn(suggestPrompts);
+
   const [upscaleLoading, setUpscaleLoading] = useState(false);
 
   const handleSuggest = async () => {
@@ -62,7 +59,7 @@ function GeneratePage() {
     setSuggestLoading(true);
     setSuggestions([]);
     try {
-      const res = await suggestFn({ data: { idea: assistantIdea, niche } });
+      const res = await suggestPrompts({ data: { idea: assistantIdea, niche } });
       if (res && res.suggestions) {
         setSuggestions(res.suggestions);
       } else {
@@ -87,7 +84,7 @@ function GeneratePage() {
     setListing(null);
 
     try {
-      const res = await genFn({
+      const res = await generateDesign({
         data: {
           prompt: finalPrompt.trim(),
           style,
@@ -113,7 +110,7 @@ function GeneratePage() {
     if (!designId || !user) return;
     setListLoading(true);
     try {
-      const res = await listFn({ data: { prompt, niche: niche || prompt, language } });
+      const res = await generateListing({ data: { prompt, niche: niche || prompt, language } });
       setListing(res);
       await supabase.from("listings").insert({
         user_id: user.id,
@@ -246,7 +243,7 @@ function GeneratePage() {
                       <Button variant="outline" className="flex-1 h-10" onClick={async () => {
                          setUpscaleLoading(true);
                          try {
-                           const res = await upscaleFn({ data: { imageUrl, prompt } });
+                           const res = await upscaleImage({ data: { imageUrl, prompt } });
                            setImageUrl(res.imageUrl);
                            toast.success("HD Yapıldı!");
                          } finally { setUpscaleLoading(false); }
@@ -298,4 +295,3 @@ function Section({ label, value, onCopy, multiline }: { label: string; value: st
   );
 }
 
-export default GeneratePage;

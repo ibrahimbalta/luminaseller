@@ -1,45 +1,36 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import crypto from 'node:crypto';
 
-let _supabase: any;
 function getSupabase() {
-  if (!_supabase) {
-    _supabase = createClient(
-      process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY!
-    );
-  }
-  return _supabase;
+  const url = process.env.SUPABASE_URL || (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_URL : '');
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY : '');
+  return createClient(url!, key!);
 }
 
-const CLIENT_ID = process.env.VITE_ETSY_CLIENT_ID || import.meta.env.VITE_ETSY_CLIENT_ID;
-const CLIENT_SECRET = process.env.ETSY_CLIENT_SECRET || process.env.VITE_ETSY_CLIENT_SECRET;
-const REDIRECT_URI = process.env.VITE_ETSY_REDIRECT_URI || import.meta.env.VITE_ETSY_REDIRECT_URI;
-
-// Helper to generate PKCE
-function generatePKCE() {
-  const verifier = crypto.randomBytes(32).toString("base64url");
-  const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
-  return { verifier, challenge };
+function getEtsyConfig() {
+  return {
+    clientId: process.env.VITE_ETSY_CLIENT_ID || process.env.ETSY_CLIENT_ID || '',
+    clientSecret: process.env.ETSY_CLIENT_SECRET || '',
+    redirectUri: process.env.VITE_ETSY_REDIRECT_URI || '',
+  };
 }
 
 // 1) Get Etsy Auth URL
 export const getEtsyAuthUrl = createServerFn({ method: "POST" })
   .handler(async () => {
-    const { verifier, challenge } = generatePKCE();
+    const crypto = await import('node:crypto');
+    const { clientId, redirectUri } = getEtsyConfig();
+
+    const verifier = crypto.randomBytes(32).toString("base64url");
+    const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
     const state = crypto.randomBytes(16).toString("hex");
 
-    // We need to store the verifier in the session or a temporary cookie/table
-    // For simplicity, we'll return it and the frontend can store it in localStorage 
-    // (though server-side session is better, TanStack Start handles this via cookies usually)
-    
     const scopes = ["listings_r", "listings_w", "shops_r", "transactions_r"];
     const url = new URL("https://www.etsy.com/oauth/connect");
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("client_id", CLIENT_ID!);
-    url.searchParams.set("redirect_uri", REDIRECT_URI!);
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("scope", scopes.join(" "));
     url.searchParams.set("state", state);
     url.searchParams.set("code_challenge", challenge);
@@ -54,13 +45,15 @@ export const handleEtsyCallback = createServerFn({ method: "POST" })
     z.object({ code: z.string(), verifier: z.string(), userId: z.string() }).parse(d)
   )
   .handler(async ({ data }) => {
+    const { clientId, redirectUri } = getEtsyConfig();
+    
     const res = await fetch("https://api.etsy.com/v3/public/oauth/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
-        client_id: CLIENT_ID!,
-        redirect_uri: REDIRECT_URI!,
+        client_id: clientId,
+        redirect_uri: redirectUri,
         code: data.code,
         code_verifier: data.verifier,
       }),
@@ -72,19 +65,18 @@ export const handleEtsyCallback = createServerFn({ method: "POST" })
     }
 
     const tokens = await res.json();
-    const shopId = tokens.access_token.split(".")[0]; // Etsy access tokens often contain shop info or we fetch it
 
     // Fetch Shop Name
-    const shopRes = await fetch(`https://api.etsy.com/v3/application/shops?client_id=${CLIENT_ID}`, {
+    await fetch(`https://api.etsy.com/v3/application/shops?client_id=${clientId}`, {
        headers: { 
          "Authorization": `Bearer ${tokens.access_token}`,
-         "x-api-key": CLIENT_ID!
+         "x-api-key": clientId
        }
     });
-    // Note: Actual shop ID requires a separate call to /users/me or similar
     
     // Save to DB
-    const { error } = await getSupabase().from("etsy_shops").upsert({
+    const supabase = getSupabase();
+    const { error } = await supabase.from("etsy_shops").upsert({
       user_id: data.userId,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
@@ -100,8 +92,11 @@ export const handleEtsyCallback = createServerFn({ method: "POST" })
 export const fetchEtsyListings = createServerFn({ method: "POST" })
   .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
   .handler(async ({ data }) => {
+    const supabase = getSupabase();
+    const { clientId } = getEtsyConfig();
+    
     // Check if shop is connected
-    const { data: shop } = await getSupabase()
+    const { data: shop } = await supabase
       .from("etsy_shops")
       .select("*")
       .eq("user_id", data.userId)
@@ -123,7 +118,7 @@ export const fetchEtsyListings = createServerFn({ method: "POST" })
       const res = await fetch(`https://api.etsy.com/v3/application/shops/${shop.shop_id}/listings/active`, {
         headers: {
           "Authorization": `Bearer ${shop.access_token}`,
-          "x-api-key": CLIENT_ID!
+          "x-api-key": clientId
         }
       });
       
@@ -150,8 +145,11 @@ export const fetchEtsyListings = createServerFn({ method: "POST" })
 export const fetchEtsyOrders = createServerFn({ method: "POST" })
   .inputValidator((d: { userId: string }) => z.object({ userId: z.string() }).parse(d))
   .handler(async ({ data }) => {
+    const supabase = getSupabase();
+    const { clientId } = getEtsyConfig();
+
     // Check if shop is connected
-    const { data: shop } = await getSupabase()
+    const { data: shop } = await supabase
       .from("etsy_shops")
       .select("*")
       .eq("user_id", data.userId)
@@ -174,7 +172,7 @@ export const fetchEtsyOrders = createServerFn({ method: "POST" })
       const res = await fetch(`https://api.etsy.com/v3/application/shops/${shop.shop_id}/receipts`, {
         headers: {
           "Authorization": `Bearer ${shop.access_token}`,
-          "x-api-key": CLIENT_ID!
+          "x-api-key": clientId
         }
       });
       
@@ -192,7 +190,7 @@ export const fetchEtsyOrders = createServerFn({ method: "POST" })
         })),
         stats: {
            totalSales: json.count,
-           totalRevenue: "TBD", // Calculated from receipts
+           totalRevenue: "TBD",
            activeOrders: json.results.filter((o: any) => !o.is_shipped).length
         },
         isDemo: false

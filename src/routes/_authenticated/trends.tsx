@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+
 import { searchEtsyTrends } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -28,7 +28,7 @@ function TrendsPage() {
   const [niche, setNiche] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<{ results: any[]; summary: string; ideas: string[] } | null>(null);
-  const search = useServerFn(searchEtsyTrends);
+
   const { user } = useAuth();
 
   const [status, setStatus] = useState("");
@@ -41,7 +41,7 @@ function TrendsPage() {
     setData(null);
     setStatus("Etsy trendleri taranıyor...");
     try {
-      const res = await search({ data: { niche: finalTerm } });
+      const res = await searchEtsyTrends({ data: { niche: finalTerm } });
       setStatus("AI verileri analiz ediyor...");
       setData(res);
       

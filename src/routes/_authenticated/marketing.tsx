@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
+
 import { getUserDesigns, generateMarketingContent } from "@/lib/ai.functions";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,7 @@ export const Route = createFileRoute("/_authenticated/marketing")({
 
 function MarketingPage() {
   const { user } = useAuth();
-  const getDesigns = useServerFn(getUserDesigns);
-  const genMarketing = useServerFn(generateMarketingContent);
+
   const [selectedDesign, setSelectedDesign] = useState<any>(null);
   const [sharingId, setSharingId] = useState<string | null>(null);
   const [aiContent, setAiContent] = useState<string>("");
@@ -29,7 +28,7 @@ function MarketingPage() {
 
   const { data: designs, isLoading } = useQuery({
     queryKey: ["user_designs", user?.id],
-    queryFn: () => getDesigns({ data: { userId: user!.id } }),
+    queryFn: () => getUserDesigns({ data: { userId: user!.id } }),
     enabled: !!user,
   });
 
@@ -37,7 +36,7 @@ function MarketingPage() {
     if (!selectedDesign) return;
     setIsGenerating(true);
     try {
-      const res = await genMarketing({ data: { designId: selectedDesign.id, platform } });
+      const res = await generateMarketingContent({ data: { designId: selectedDesign.id, platform } });
       setAiContent(res.content);
       toast.success("AI içerik hazırladı!");
     } catch {

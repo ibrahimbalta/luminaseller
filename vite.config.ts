@@ -7,7 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
-    TanStackRouterVite(),
+
     tanstackStart({
       server: { entry: "src/server.ts" },
       deployment: "cloudflare-pages",
