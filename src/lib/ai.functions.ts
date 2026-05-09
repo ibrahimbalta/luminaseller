@@ -279,3 +279,29 @@ export const fetchEtsyOrders = createServerFn({ method: "GET" })
     };
   });
 
+export const suggestPrompts = createServerFn({ method: "POST" })
+  .inputValidator((d: { idea: string; niche: string }) => z.object({ idea: z.string(), niche: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    const ai = await callAI({
+      messages: [
+        {
+          role: "system",
+          content: "Sen bir Etsy POD tasarım uzmanısın. Kullanıcının basit fikrini al ve Etsy'de çok satan 3 farklı profesyonel İngilizce görsel üretim promptu (FLUX uyumlu) oluştur. Yanıtı şu JSON formatında ver: { suggestions: [{ title: 'Stil Adı', prompt: 'İngilizce Detaylı Prompt' }] }. Sadece JSON."
+        },
+        {
+          role: "user",
+          content: `Fikir: ${data.idea}\nNiş: ${data.niche}`
+        }
+      ]
+    });
+
+    try {
+      let content = ai.choices[0].message.content;
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) content = jsonMatch[0];
+      return JSON.parse(content);
+    } catch (e) {
+      return { suggestions: [] };
+    }
+  });
+

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { generateDesign, generateListing, upscaleImage } from "@/lib/ai.functions";
+import { generateDesign, generateListing, upscaleImage, suggestPrompts } from "@/lib/ai.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Wand2, Copy, Download, FileText, Sparkles, Image as ImageIcon, ArrowRight } from "lucide-react";
+import { Loader2, Wand2, Copy, Download, FileText, Sparkles, Image as ImageIcon, ArrowRight, Zap, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/generate")({
   component: GeneratePage,
@@ -52,12 +54,29 @@ function GeneratePage() {
   const [bulkCount, setBulkCount] = useState<number>(1);
   const [bulkResults, setBulkResults] = useState<string[]>([]);
 
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantIdea, setAssistantIdea] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+
   const genFn = useServerFn(generateDesign);
   const listFn = useServerFn(generateListing);
   const upscaleFn = useServerFn(upscaleImage);
+  const suggestFn = useServerFn(suggestPrompts);
   const [upscaleLoading, setUpscaleLoading] = useState(false);
 
-
+  const handleSuggest = async () => {
+    if (!assistantIdea.trim()) return;
+    setSuggestLoading(true);
+    try {
+      const res = await suggestFn({ data: { idea: assistantIdea, niche } });
+      setSuggestions(res.suggestions || []);
+    } catch (e) {
+      toast.error("Öneri alınamadı");
+    } finally {
+      setSuggestLoading(false);
+    }
+  };
 
   const generate = async () => {
     if (!prompt.trim() || !user) return;
@@ -87,43 +106,12 @@ function GeneratePage() {
       }
       
       setBulkResults(results);
-      setImageUrl(results[0]); // Set first one as main preview
-      toast.success(`${count} tasarım üretildi`);
+      setImageUrl(results[0]); 
+      toast.success(`${count} Tasarım Üretildi!`);
     } catch (e: any) {
       toast.error(e.message ?? "Üretim hatası");
     } finally {
       setGenLoading(false);
-    }
-  };
-
-  const VARIATIONS = [
-    { label: "Farklı renk", extra: "use a completely different bold color palette" },
-    { label: "Minimal", extra: "minimalist line art version, fewer details" },
-    { label: "Vintage", extra: "vintage retro 70s aesthetic, distressed texture" },
-    { label: "Boho", extra: "boho hand-drawn illustrative style" },
-  ];
-
-  const generateVariation = async (extra: string, label: string) => {
-    if (!prompt.trim() || !user) return;
-
-    setVarLoading(true);
-    try {
-      const res = await genFn({
-        data: {
-          prompt: `${prompt.trim()}. Variation: ${extra}`.slice(0, 500),
-          style,
-          ...(referenceImageUrl ? { referenceImageUrl } : {}),
-        },
-      });
-      setVariations((v) => [...v, { label, url: res.imageUrl }]);
-      await supabase
-        .from("designs")
-        .insert({ user_id: user.id, niche, style, prompt: `${prompt} (${label})`, image_url: res.imageUrl });
-      toast.success(`Varyasyon üretildi`);
-    } catch (e: any) {
-      toast.error(e.message ?? "Varyasyon hatası");
-    } finally {
-      setVarLoading(false);
     }
   };
 
@@ -133,9 +121,9 @@ function GeneratePage() {
     try {
       const res = await upscaleFn({ data: { imageUrl, prompt } });
       setImageUrl(res.imageUrl);
-      toast.success("Görsel HD olarak iyileştirildi!");
+      toast.success("Görsel HD Kaliteye Yükseltildi!");
     } catch (e: any) {
-      toast.error("İyileştirme hatası");
+      toast.error("Yükseltme hatası");
     } finally {
       setUpscaleLoading(false);
     }
@@ -157,7 +145,7 @@ function GeneratePage() {
         tiktok_script: res.tiktok_script,
         language,
       });
-      toast.success("Listing hazır");
+      toast.success("SEO Listing Hazır!");
     } catch (e: any) {
       toast.error(e.message ?? "Listing hatası");
     } finally {
@@ -171,133 +159,157 @@ function GeneratePage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Tasarım Üret</h1>
-        <p className="text-sm text-muted-foreground mt-1">Niş ve prompt girin, AI tasarım ve SEO listing oluştursun.</p>
+    <div className="space-y-8 pb-16 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-semibold tracking-tight">Tasarım & SEO Atölyesi</h1>
+        <p className="text-sm text-muted-foreground">Fikirlerinizi profesyonel Etsy ürünlerine dönüştürün.</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-4 rounded-xl border border-border bg-card p-5">
-          <div>
-            <Label>Niş</Label>
-            <Input placeholder="funny gym t-shirt" value={niche} onChange={(e) => setNiche(e.target.value)} />
-          </div>
-          <div>
-            <Label>Tasarım promptu</Label>
-            <Textarea
-              rows={4}
-              placeholder="minimal typography, funny quote about morning workouts"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-            />
-          </div>
-          <div className="rounded-md border border-border bg-background p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs">Referans görsel (opsiyonel)</Label>
-              {referenceImageUrl && (
-                <button type="button" onClick={() => setReferenceImageUrl("")} className="text-xs text-muted-foreground hover:text-foreground">Kaldır</button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="https://... görsel linki yapıştır"
-                value={referenceImageUrl.startsWith("data:") ? "" : referenceImageUrl}
-                onChange={(e) => setReferenceImageUrl(e.target.value)}
-                className="flex-1"
-              />
-              <label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-input bg-background px-3 text-sm hover:bg-accent">
-                Yükle
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    if (f.size > 5 * 1024 * 1024) {
-                      toast.error("Görsel 5MB'dan küçük olmalı");
-                      return;
-                    }
-                    const r = new FileReader();
-                    r.onload = () => setReferenceImageUrl(String(r.result));
-                    r.readAsDataURL(f);
-                  }}
-                />
-              </label>
-            </div>
-            {referenceImageUrl && (
-              <div>
-                <img src={referenceImageUrl} alt="ref" className="h-24 w-24 rounded object-cover" />
-                <p className="mt-1 text-xs text-muted-foreground">AI bu görselden ilham alarak farklı renk/format üretecek.</p>
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* LEFT: FORM */}
+        <div className="space-y-6">
+          <Card className="border-border/60 shadow-sm overflow-hidden">
+            <CardContent className="p-6 space-y-5">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pazar / Niş</Label>
+                <Input placeholder="örn: kedi severler, kamp tutkunları" value={niche} onChange={(e) => setNiche(e.target.value)} className="bg-muted/30" />
               </div>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Stil</Label>
-              <Select value={style} onValueChange={setStyle}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {STYLES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tasarım Konusu</Label>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-7 text-[10px] uppercase font-bold text-primary bg-primary/5 hover:bg-primary/10 gap-1.5 rounded-full px-3"
+                    onClick={() => setAssistantOpen(!assistantOpen)}
+                  >
+                    <Sparkles className="h-3 w-3" /> AI Asistanı
+                  </Button>
+                </div>
+
+                {assistantOpen && (
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="Ne tür bir tasarım istersin? (örn: kahve içen astronot)" 
+                        value={assistantIdea}
+                        onChange={(e) => setAssistantIdea(e.target.value)}
+                        className="bg-background"
+                      />
+                      <Button size="sm" onClick={handleSuggest} disabled={suggestLoading}>
+                        {suggestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                    {suggestions.length > 0 && (
+                      <div className="grid gap-2">
+                        {suggestions.map((s, i) => (
+                          <button 
+                            key={i}
+                            onClick={() => { setPrompt(s.prompt); setAssistantOpen(false); }}
+                            className="text-left p-3 rounded-lg bg-background border border-border/50 hover:border-primary transition-colors group"
+                          >
+                            <p className="text-[10px] font-bold text-primary uppercase mb-1">{s.title}</p>
+                            <p className="text-xs text-muted-foreground line-clamp-1 group-hover:text-foreground">{s.prompt}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <Textarea
+                  rows={4}
+                  placeholder="Tasarımınızı tarif edin veya AI asistanını kullanın..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="bg-muted/30 resize-none leading-relaxed"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Stil</Label>
+                  <Select value={style} onValueChange={setStyle}>
+                    <SelectTrigger className="bg-muted/30"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {STYLES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Üretim Modu</Label>
+                  <Select value={bulkCount.toString()} onValueChange={(v) => setBulkCount(parseInt(v))}>
+                    <SelectTrigger className="bg-muted/30"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Tekil Tasarım</SelectItem>
+                      <SelectItem value="3">Üçlü Paket (Hızlı)</SelectItem>
+                      <SelectItem value="5">Beşli Seri (Kapsamlı)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Button onClick={generate} disabled={genLoading || !prompt.trim()} className="w-full h-12 text-sm font-bold gap-2 shadow-lg shadow-primary/10" size="lg">
+                {genLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Zap className="h-4 w-4" /> {bulkCount > 1 ? `${bulkCount} Tasarım Üretiliyor...` : "Tasarımı Üret"}</>}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {referenceImageUrl && (
+            <div className="p-4 rounded-xl border border-dashed border-border bg-muted/20 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                 <img src={referenceImageUrl} className="h-12 w-12 rounded-lg object-cover border" />
+                 <p className="text-xs text-muted-foreground font-medium">Referans görsel aktif.</p>
+              </div>
+              <Button variant="ghost" size="xs" onClick={() => setReferenceImageUrl("")} className="text-muted-foreground">Kaldır</Button>
             </div>
-            <div>
-              <Label>Adet (Bulk Mode)</Label>
-              <Select value={bulkCount.toString()} onValueChange={(v) => setBulkCount(parseInt(v))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">1 Tasarım</SelectItem>
-                  <SelectItem value="3">3 Tasarım (Bulk)</SelectItem>
-                  <SelectItem value="5">5 Tasarım (Bulk)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Button onClick={generate} disabled={genLoading || !prompt.trim()} className="w-full" size="lg">
-            {genLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Wand2 className="mr-2 h-4 w-4" /> {bulkCount > 1 ? `${bulkCount} Tasarım Üret` : "Tasarım üret"}</>}
-          </Button>
+          )}
         </div>
 
-        <div className="space-y-4">
-          <div className="relative aspect-square overflow-hidden rounded-xl border border-border bg-card group">
-            {imageUrl ? (
-              mockupMode === "none" ? (
-                <img src={imageUrl} alt="design" className="h-full w-full object-contain" />
-              ) : (
-                <div className="relative h-full w-full">
-                   {/* Mockup Base */}
-                   <img 
-                    src={mockupMode === "tshirt" 
-                      ? "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&q=80&w=1000" 
-                      : "https://images.unsplash.com/photo-1514228742587-6b1558fbed20?auto=format&fit=crop&q=80&w=1000"} 
-                    className="h-full w-full object-cover"
-                   />
-                   {/* Design Overlay */}
-                   <div className="absolute inset-0 flex items-center justify-center p-32">
-                      <img 
-                        src={imageUrl} 
-                        className={`max-h-full max-w-full mix-blend-multiply opacity-90 ${mockupMode === "tshirt" ? "mt-4" : "mt-2 rotate-2 scale-75"}`} 
-                      />
-                   </div>
-                </div>
-              )
-            ) : (
-              <div className="grid h-full place-items-center text-sm text-muted-foreground">Tasarım burada görünecek</div>
-            )}
-            
-            {imageUrl && (
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button size="xs" variant="secondary" onClick={() => setMockupMode(mockupMode === "tshirt" ? "none" : "tshirt")} className="h-7 px-2 text-[10px]">
-                  {mockupMode === "tshirt" ? "Tasarımı Gör" : "Tişört"}
-                </Button>
-                <Button size="xs" variant="secondary" onClick={() => setMockupMode(mockupMode === "mug" ? "none" : "mug")} className="h-7 px-2 text-[10px]">
-                   {mockupMode === "mug" ? "Tasarımı Gör" : "Kupa"}
-                </Button>
+        {/* RIGHT: PREVIEW & RESULTS */}
+        <div className="space-y-6">
+          <Card className="border-border/60 shadow-sm overflow-hidden min-h-[400px] flex flex-col">
+            <CardContent className="p-6 flex-1 flex flex-col">
+              <div className="flex-1 relative aspect-square rounded-xl overflow-hidden bg-muted/30 border border-border/50 group">
+                {genLoading ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center space-y-4">
+                     <div className="h-16 w-16 relative">
+                        <div className="absolute inset-0 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+                        <div className="absolute inset-4 bg-primary/10 rounded-full flex items-center justify-center">
+                           <Sparkles className="h-6 w-6 text-primary animate-pulse" />
+                        </div>
+                     </div>
+                     <div className="text-center">
+                        <p className="text-sm font-bold animate-pulse">Flux Motoru Çalışıyor</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Yüksek kaliteli tasarım işleniyor...</p>
+                     </div>
+                  </div>
+                ) : imageUrl ? (
+                   <img src={imageUrl} alt="Result" className="w-full h-full object-contain animate-in fade-in zoom-in-95 duration-500" />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground opacity-30">
+                     <ImageIcon className="h-12 w-12 mb-4" />
+                     <p className="text-sm font-medium">Tasarım Önizleme</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              {imageUrl && !genLoading && (
+                <div className="mt-6 flex flex-wrap gap-2">
+                   <Button variant="outline" size="sm" className="gap-2 flex-1 h-10" onClick={() => window.open(imageUrl, '_blank')}>
+                      <Download className="h-4 w-4" /> İndir
+                   </Button>
+                   <Button variant="outline" size="sm" className="gap-2 flex-1 h-10" onClick={handleUpscale} disabled={upscaleLoading}>
+                      {upscaleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RefreshCw className="h-4 w-4" /> Netleştir (HD)</>}
+                   </Button>
+                   <Button className="gap-2 w-full h-10" onClick={writeListing} disabled={listLoading}>
+                      {listLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><FileText className="h-4 w-4" /> Listing & SEO Hazırla</>}
+                   </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {bulkResults.length > 1 && (
             <div className="grid grid-cols-5 gap-2">
@@ -305,7 +317,7 @@ function GeneratePage() {
                 <button
                   key={i}
                   onClick={() => setImageUrl(url)}
-                  className={`aspect-square overflow-hidden rounded-md border-2 transition-all ${
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition-all ${
                     imageUrl === url ? "border-primary" : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
@@ -314,82 +326,28 @@ function GeneratePage() {
               ))}
             </div>
           )}
-
-          {imageUrl && (
-            <div className="flex gap-2">
-              <a
-                href={imageUrl}
-                download={`design-${Date.now()}.png`}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm hover:bg-accent"
-              >
-                <Download className="h-4 w-4" /> İndir
-                <Download className="h-4 w-4" /> İndir
-              </a>
-              <Button onClick={handleUpscale} disabled={upscaleLoading} variant="outline" className="flex-1">
-                {upscaleLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Sparkles className="mr-2 h-4 w-4" /> Netleştir (HD)</>}
-              </Button>
-            </div>
-          )}
-          {imageUrl && (
-            <div className="flex gap-2">
-              <Button onClick={writeListing} disabled={listLoading} className="w-full">
-                {listLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><FileText className="mr-2 h-4 w-4" /> Listing yaz</>}
-              </Button>
-            </div>
-          )}
-          {imageUrl && (
-            <div className="space-y-2">
-              <Label className="text-xs">Varyasyonlar (farklı renk / format)</Label>
-              <div className="flex flex-wrap gap-2">
-                {VARIATIONS.map((v) => (
-                  <Button
-                    key={v.label}
-                    size="sm"
-                    variant="outline"
-                    disabled={varLoading}
-                    onClick={() => generateVariation(v.extra, v.label)}
-                  >
-                    {varLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : v.label}
-                  </Button>
-                ))}
-              </div>
-              {variations.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 pt-2">
-                  {variations.map((v, i) => (
-                    <a key={i} href={v.url} download={`design-${v.label}-${i}.png`} className="block overflow-hidden rounded-lg border border-border bg-card">
-                      <img src={v.url} alt={v.label} className="aspect-square w-full object-contain" />
-                      <div className="p-1.5 text-center text-xs">{v.label}</div>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
       {listing && (
-        <div className="space-y-4 rounded-xl border border-border bg-card p-5">
-          <h2 className="text-lg font-semibold">Etsy Listing</h2>
-
-          <Section label="Başlık" value={listing.title} onCopy={copy} />
-          <Section label="Açıklama" value={listing.description} onCopy={copy} multiline />
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <Label>13 Etiket</Label>
-              <Button size="sm" variant="ghost" onClick={() => copy(listing.tags.join(", "))}>
-                <Copy className="h-3 w-3" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {listing.tags.map((t: string, i: number) => (
-                <span key={i} className="rounded-md bg-accent px-2 py-1 text-xs">{t}</span>
-              ))}
-            </div>
-          </div>
-          <Section label="Pinterest Pin" value={listing.pinterest_text} onCopy={copy} multiline />
-          <Section label="TikTok Script" value={listing.tiktok_script} onCopy={copy} multiline />
-        </div>
+        <Card className="border-border/60 shadow-md animate-in slide-in-from-bottom-4 duration-700">
+           <CardHeader className="border-b border-border/40 bg-muted/20 p-6">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                 <FileText className="h-5 w-5 text-primary" /> Etsy SEO Paketi
+              </CardTitle>
+           </CardHeader>
+           <CardContent className="p-6 space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                 <Section label="Etsy Başlığı" value={listing.title} onCopy={copy} />
+                 <Section label="Etiketler (13 Adet)" value={listing.tags.join(", ")} onCopy={copy} />
+              </div>
+              <Section label="Ürün Açıklaması" value={listing.description} onCopy={copy} multiline />
+              <div className="grid gap-6 md:grid-cols-2 pt-4 border-t border-border/40">
+                 <Section label="Pinterest Pin Metni" value={listing.pinterest_text} onCopy={copy} multiline />
+                 <Section label="TikTok / Reels Script" value={listing.tiktok_script} onCopy={copy} multiline />
+              </div>
+           </CardContent>
+        </Card>
       )}
     </div>
   );
@@ -397,18 +355,18 @@ function GeneratePage() {
 
 function Section({ label, value, onCopy, multiline }: { label: string; value: string; onCopy: (v: string) => void; multiline?: boolean }) {
   return (
-    <div>
-      <div className="mb-1 flex items-center justify-between">
-        <Label>{label}</Label>
-        <Button size="sm" variant="ghost" onClick={() => onCopy(value)}>
-          <Copy className="h-3 w-3" />
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</Label>
+        <Button variant="ghost" size="xs" onClick={() => onCopy(value)} className="h-6 text-[10px] gap-1 hover:text-primary">
+          <Copy className="h-3 w-3" /> Kopyala
         </Button>
       </div>
-      {multiline ? (
-        <div className="whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-sm">{value}</div>
-      ) : (
-        <div className="rounded-md border border-border bg-background p-3 text-sm">{value}</div>
-      )}
+      <div className={`p-4 rounded-xl bg-muted/30 border border-border/40 text-sm leading-relaxed ${multiline ? "whitespace-pre-wrap" : "truncate"}`}>
+        {value}
+      </div>
     </div>
   );
 }
+
+export default GeneratePage;
