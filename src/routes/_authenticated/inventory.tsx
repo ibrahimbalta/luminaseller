@@ -69,8 +69,8 @@ function InventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-2xl font-bold">Etsy Envanteri</h1>
-          <p className="text-sm text-muted-foreground">Mağazanızdaki ürünleri yönetin ve SEO optimizasyonu yapın.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">Envanter</h1>
+          <p className="text-sm text-muted-foreground mt-1">Mağazanızdaki ürünleri yönetin ve SEO optimizasyonu yapın.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading || isRefetching}>

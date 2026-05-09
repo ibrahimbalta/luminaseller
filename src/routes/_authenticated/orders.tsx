@@ -27,9 +27,9 @@ function OrdersPage() {
 
   return (
     <div className="space-y-8 pb-10 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Siparişler & Finans</h1>
-        <p className="text-muted-foreground">Mağazanızın satış performansını ve finansal büyümesini anlık takip edin.</p>
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Siparişler & Finans</h1>
+        <p className="text-sm text-muted-foreground mt-1">Satış performansınızı ve finansal büyümenizi takip edin.</p>
       </div>
 
       {data?.isDemo && (

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, Sparkles, Zap, Crown, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -18,11 +18,11 @@ function PricingPage() {
       name: "Starter",
       id: "free",
       price: "₺0",
-      description: "Yeni başlayanlar için temel özellikler.",
+      description: "Yeni başlayanlar için temel araçlar.",
       features: [
         "10 AI Kredi / Ay",
         "Etsy Trend Analizi",
-        "AI Tasarım Üretimi (FLUX)",
+        "AI Tasarım Üretimi",
         "Standart Kalite",
       ],
       buttonText: currentPlan === "free" ? "Mevcut Planınız" : "Starter'a Dön",
@@ -33,11 +33,11 @@ function PricingPage() {
       name: "Pro",
       id: "pro",
       price: "₺599",
-      description: "Satışlarını artırmak isteyen ciddi satıcılar.",
+      description: "Ciddi satıcılar için profesyonel özellikler.",
       features: [
         "100 AI Kredi / Ay",
         "HD Upscale (Netleştirme)",
-        "Toplu Üretim (Bulk Mode)",
+        "Toplu Üretim Modu",
         "Pazarlama Laboratuvarı",
         "Öncelikli Destek",
       ],
@@ -67,61 +67,56 @@ function PricingPage() {
 
   return (
     <div className="space-y-12 pb-20 animate-in fade-in duration-500">
-      <div className="text-center space-y-4">
-        <Badge variant="outline" className="px-5 py-1.5 text-primary border-primary/20 bg-primary/5 font-black tracking-widest uppercase text-[10px]">
-          Fiyatlandırma
-        </Badge>
-        <h1 className="text-4xl font-black tracking-tighter sm:text-6xl text-foreground">
-          Geleceğin Mağazasını <span className="text-primary italic">Bugün</span> Kurun
-        </h1>
-        <p className="mx-auto max-w-2xl text-muted-foreground font-medium">
-          Lumina Seller ile zaman kazanın, tasarımlarınızı otomatiğe bağlayın ve Etsy satışlarınızı katlayın.
+      <div className="text-center space-y-3">
+        <h1 className="text-4xl font-semibold tracking-tight">Planlar & Fiyatlandırma</h1>
+        <p className="mx-auto max-w-2xl text-muted-foreground text-sm">
+          Mağazanızın ölçeğine uygun planı seçin, tasarımı otomatiğe bağlayın ve satışlarınızı katlayın.
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-3 max-w-6xl mx-auto">
+      <div className="grid gap-6 lg:grid-cols-3 max-w-6xl mx-auto px-4">
         {plans.map((plan) => (
           <Card 
             key={plan.name} 
-            className={`relative flex flex-col border-2 transition-all duration-500 hover:shadow-2xl overflow-hidden ${
-              plan.highlight ? "border-primary shadow-xl scale-105 z-10" : "border-border hover:border-primary/20"
+            className={`relative flex flex-col border-border/60 shadow-sm transition-all duration-300 ${
+              plan.highlight ? "ring-2 ring-primary border-transparent" : "hover:border-border"
             }`}
           >
             {plan.highlight && (
-              <div className="absolute -top-0 right-0 rounded-bl-xl bg-primary px-4 py-1.5 text-[10px] font-black text-primary-foreground uppercase tracking-widest shadow-lg">
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-white border-none text-[10px] font-bold">
                 EN POPÜLER
-              </div>
+              </Badge>
             )}
-            <CardHeader className="pt-8">
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`p-2.5 rounded-xl ${plan.highlight ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                  {plan.id === "free" && <Zap className="h-6 w-6" />}
-                  {plan.id === "pro" && <Sparkles className="h-6 w-6" />}
-                  {plan.id === "business" && <Crown className="h-6 w-6" />}
+            <CardHeader className="pt-8 pb-4">
+              <div className="flex items-center justify-between mb-2">
+                <CardTitle className="text-lg font-semibold">{plan.name}</CardTitle>
+                <div className={`p-1.5 rounded-md ${plan.highlight ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                  {plan.id === "free" && <Zap className="h-4 w-4" />}
+                  {plan.id === "pro" && <Sparkles className="h-4 w-4" />}
+                  {plan.id === "business" && <Crown className="h-4 w-4" />}
                 </div>
-                <CardTitle className="text-2xl font-black tracking-tight">{plan.name}</CardTitle>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-5xl font-black tracking-tighter">{plan.price}</span>
-                <span className="text-muted-foreground text-sm font-bold">/ay</span>
+                <span className="text-3xl font-bold tracking-tight">{plan.price}</span>
+                <span className="text-muted-foreground text-xs font-medium">/ay</span>
               </div>
-              <CardDescription className="pt-6 font-medium leading-relaxed">{plan.description}</CardDescription>
+              <CardDescription className="pt-4 text-xs font-medium leading-relaxed">
+                {plan.description}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-8">
-              <ul className="space-y-4">
+            <CardContent className="flex-1 pb-8 pt-4">
+              <ul className="space-y-3">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-3 text-sm font-bold text-foreground/80">
-                    <div className="h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                       <Check className="h-3 w-3 text-green-500" />
-                    </div>
+                  <li key={feature} className="flex items-center gap-2.5 text-[13px] font-medium text-foreground/80">
+                    <Check className="h-3.5 w-3.5 text-green-500 shrink-0" />
                     <span>{feature}</span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter className="pt-4 border-t border-border/50 bg-muted/20">
+            <CardFooter className="pt-4 border-t border-border/30">
               <Button 
-                className={`w-full font-black py-7 text-lg shadow-lg shadow-primary/10 ${plan.active ? 'bg-muted text-muted-foreground cursor-default' : ''}`} 
+                className={`w-full font-semibold ${plan.active ? 'bg-muted text-muted-foreground cursor-default' : ''}`} 
                 variant={plan.highlight ? "default" : "outline"}
                 disabled={plan.active}
                 asChild={!plan.active && !!plan.checkoutUrl}
@@ -137,22 +132,20 @@ function PricingPage() {
         ))}
       </div>
 
-      <section className="rounded-[2.5rem] bg-card/50 backdrop-blur-sm border border-border/50 p-10 md:p-16 text-center max-w-4xl mx-auto space-y-8 shadow-sm">
-        <div className="h-20 w-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-           <ShieldCheck className="h-10 w-10 text-primary" />
+      <section className="rounded-2xl border border-border/60 bg-muted/20 p-8 text-center max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-center gap-2 text-sm font-semibold">
+           <ShieldCheck className="h-4 w-4 text-primary" />
+           Güvenli Ödeme & Global Standartlar
         </div>
-        <div className="space-y-4">
-          <h2 className="text-3xl font-black tracking-tight">Güvenli Ödeme & Global Standartlar</h2>
-          <p className="text-muted-foreground text-sm font-medium leading-relaxed max-w-2xl mx-auto">
-            Ödemeleriniz <strong className="text-foreground">LemonSqueezy</strong> güvencesiyle 256-bit SSL ile korunur. 
-            İstediğiniz zaman iptal edebilirsiniz. Kredi kartı bilgileriniz asla sunucularımızda saklanmaz.
-          </p>
-        </div>
-        <div className="flex flex-wrap justify-center items-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all text-foreground font-black tracking-widest text-[10px]">
-          <span>VISA</span>
-          <span>MASTERCARD</span>
-          <span>AMERICAN EXPRESS</span>
-          <span>PAYPAL</span>
+        <p className="text-muted-foreground text-[13px] leading-relaxed max-w-2xl mx-auto font-medium">
+          Ödemeleriniz <strong className="text-foreground">LemonSqueezy</strong> güvencesiyle korunur. 
+          İstediğiniz zaman iptal edebilirsiniz. Kredi kartı bilgileriniz Lumina sunucularında asla saklanmaz.
+        </p>
+        <div className="flex flex-wrap justify-center items-center gap-6 opacity-40 grayscale hover:grayscale-0 transition-all text-[10px] font-bold tracking-widest uppercase">
+          <span>Visa</span>
+          <span>Mastercard</span>
+          <span>Amex</span>
+          <span>PayPal</span>
         </div>
       </section>
     </div>

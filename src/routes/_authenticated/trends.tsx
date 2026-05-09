@@ -64,9 +64,9 @@ function TrendsPage() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="max-w-2xl">
-        <h1 className="text-3xl font-bold tracking-tight">Etsy Trend Keşfi</h1>
-        <p className="mt-2 text-muted-foreground">Etsy'deki en çok satanları anlık analiz edin, AI ile kazandıran tasarımlar bulun.</p>
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Trend Keşfi</h1>
+        <p className="text-sm text-muted-foreground mt-1">Etsy'deki en çok satanları analiz edin ve kazandıran nişleri bulun.</p>
       </div>
 
       <div className="space-y-4">
