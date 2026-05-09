@@ -1,16 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Settings as SettingsIcon, Shop, CreditCard, User, LogOut, Check, ExternalLink, Loader2, RefreshCw, Megaphone, Crown, Image as ImageIcon } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Settings as SettingsIcon, CreditCard, User, LogOut, Check, Loader2, RefreshCw, Megaphone, Crown, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getEtsyAuthUrl } from "@/lib/etsy.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
@@ -64,184 +65,149 @@ function SettingsPage() {
   if (authLoading) {
     return (
       <div className="flex h-60 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10 pb-10 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black tracking-tighter uppercase">Ayarlar & Entegrasyonlar</h1>
-        <p className="text-muted-foreground font-medium">Hesap profilinizi ve mağaza entegrasyonlarınızı buradan yönetin.</p>
+    <div className="max-w-3xl space-y-8 pb-16 animate-in fade-in duration-500">
+      <div>
+        <h1 className="text-3xl font-semibold tracking-tight">Ayarlar</h1>
+        <p className="text-sm text-muted-foreground mt-1">Hesap, entegrasyon ve abonelik ayarlarınızı yönetin.</p>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-[280px_1fr]">
-        <aside className="space-y-2">
-          {[
-            { label: "Profil Bilgileri", icon: User, active: true },
-            { label: "Mağaza Bağlantısı", icon: SettingsIcon, active: false },
-            { label: "Abonelik & Planlar", icon: CreditCard, active: false },
-          ].map((item, i) => (
-            <button
-              key={i}
-              className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all ${
-                item.active ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "hover:bg-muted"
-              }`}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </button>
-          ))}
-          <div className="pt-4 mt-4 border-t border-border/50">
-            <button 
-              onClick={() => signOut()}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-destructive hover:bg-destructive/10 transition-all"
-            >
-              <LogOut className="h-4 w-4" />
-              Oturumu Kapat
-            </button>
+      {/* Profile */}
+      <Card className="rounded-xl border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <User className="h-3.5 w-3.5" /> Profil Bilgileri
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 pb-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">E-posta</Label>
+              <Input value={user?.email || ""} disabled className="bg-muted/50 text-muted-foreground cursor-not-allowed" />
+            </div>
+            <div>
+              <Label className="text-[11px] text-muted-foreground mb-1.5 block">Görünen Ad</Label>
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Adınız"
+              />
+            </div>
           </div>
-        </aside>
+          <div className="flex justify-end">
+            <Button onClick={updateProfile} disabled={loading} size="sm" className="gap-2">
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Kaydet
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="space-y-12">
-          {/* Section: Profile */}
-          <section className="space-y-4">
-             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 w-fit px-3 py-1 rounded-full border border-primary/10">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" /> Kişisel Profil
-             </div>
-             <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm overflow-hidden border-l-4 border-l-primary">
-                <CardContent className="p-8 space-y-6">
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">E-Posta Adresi</Label>
-                      <Input value={user?.email || ""} disabled className="bg-muted font-bold cursor-not-allowed opacity-70" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Görünen Ad Soyad</Label>
-                      <Input 
-                        value={displayName} 
-                        onChange={(e) => setDisplayName(e.target.value)} 
-                        className="font-bold border-border/50 focus:ring-primary/20 h-11"
-                        placeholder="Adınızı girin"
-                      />
-                    </div>
-                  </div>
-                  <Button onClick={updateProfile} disabled={loading} className="w-full sm:w-auto px-10 font-bold shadow-lg shadow-primary/20 h-11">
-                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
-                    Güncelle
-                  </Button>
-                </CardContent>
-             </Card>
-          </section>
-
-          {/* Section: Social Media */}
-          <section className="space-y-4">
-             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 w-fit px-3 py-1 rounded-full border border-primary/10">
-                <div className="h-1.5 w-1.5 rounded-full bg-pink-500 animate-pulse" /> Sosyal Medya Entegrasyonu
-             </div>
-             <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm">
-                <CardContent className="p-8 grid gap-4 sm:grid-cols-2">
-                   <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-br from-pink-500/10 to-orange-500/10 border border-pink-500/20">
-                      <div className="flex items-center gap-3">
-                         <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-pink-500 to-orange-500 flex items-center justify-center text-white">
-                            <Megaphone className="h-5 w-5" />
-                         </div>
-                         <div>
-                            <div className="font-bold text-sm">Instagram</div>
-                            <div className="text-[10px] text-muted-foreground">Bağlı Değil</div>
-                         </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="font-bold text-[10px] uppercase h-8" onClick={() => toast.info("Instagram API Bağlantısı Çok Yakında!")}>
-                         Bağla
-                      </Button>
-                   </div>
-                   <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-br from-red-500/10 to-red-700/10 border border-red-500/20">
-                      <div className="flex items-center gap-3">
-                         <div className="h-10 w-10 rounded-xl bg-red-600 flex items-center justify-center text-white">
-                            <ImageIcon className="h-5 w-5" />
-                         </div>
-                         <div>
-                            <div className="font-bold text-sm">Pinterest</div>
-                            <div className="text-[10px] text-muted-foreground">Bağlı Değil</div>
-                         </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="font-bold text-[10px] uppercase h-8" onClick={() => toast.info("Pinterest API Bağlantısı Çok Yakında!")}>
-                         Bağla
-                      </Button>
-                   </div>
-                </CardContent>
-             </Card>
-          </section>
-
-          {/* Section: Etsy */}
-          <section className="space-y-4">
-             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 w-fit px-3 py-1 rounded-full border border-primary/10">
-                <div className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" /> Etsy Mağaza Bağlantısı
-             </div>
-             <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-sm overflow-hidden">
-                <CardContent className="p-8">
-                  {shop ? (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 rounded-2xl bg-primary/5 border border-primary/20">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                           <Check className="h-6 w-6" />
-                        </div>
-                        <div>
-                           <h4 className="font-bold text-base">Etsy Mağazanız Hazır</h4>
-                           <p className="text-xs text-muted-foreground font-medium italic">Verileriniz anlık olarak senkronize ediliyor.</p>
-                        </div>
-                      </div>
-                      <Button variant="outline" onClick={connectEtsy} className="font-bold gap-2 h-11 px-6">
-                         <RefreshCw className="h-4 w-4" /> Bağlantıyı Yenile
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="text-center py-10 space-y-6">
-                      <div className="mx-auto h-20 w-20 rounded-3xl bg-muted flex items-center justify-center rotate-3">
-                         <SettingsIcon className="h-10 w-10 text-muted-foreground/30" />
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-xl font-black uppercase">Mağazanı Bağla</h3>
-                        <p className="text-sm text-muted-foreground max-w-sm mx-auto font-medium">
-                           Siparişlerini yönetmek ve SEO optimizasyonu yapmak için Etsy dükkanını Lumina'ya bağlamalısın.
-                        </p>
-                      </div>
-                      <Button onClick={connectEtsy} className="font-bold px-12 h-12 shadow-xl shadow-primary/20 uppercase tracking-wider">
-                         Etsy Dükkanını Bağla
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-             </Card>
-          </section>
-
-          {/* Section: Subscription */}
-          <section className="space-y-4 pb-10">
-             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 w-fit px-3 py-1 rounded-full border border-primary/10">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary" /> Üyelik & Plan Durumu
-             </div>
-             <Card className="border-none bg-gradient-to-br from-primary via-primary/90 to-accent text-primary-foreground shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-700">
-                   <Crown className="h-32 w-32" />
+      {/* Etsy Connection */}
+      <Card className="rounded-xl border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <SettingsIcon className="h-3.5 w-3.5" /> Etsy Mağaza Bağlantısı
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-6">
+          {shop ? (
+            <div className="flex items-center justify-between p-4 bg-green-500/5 border border-green-500/20 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <Check className="h-4 w-4 text-green-600" />
                 </div>
-                <CardContent className="p-10 flex flex-col sm:flex-row items-center justify-between gap-8">
-                  <div className="space-y-2 text-center sm:text-left">
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Mevcut Üyelik Planınız</p>
-                    <h3 className="text-5xl font-black tracking-tighter">{profile?.plan || "FREE"}</h3>
-                    <div className="flex items-center gap-2 mt-2">
-                       <Badge variant="secondary" className="bg-white/20 text-white border-none font-bold">
-                          {profile?.credits || 0} AI Kredisi Kalan
-                       </Badge>
-                    </div>
-                  </div>
-                  <Button variant="secondary" size="lg" className="font-black px-12 h-14 shadow-2xl uppercase tracking-tighter text-lg" asChild>
-                     <Link to="/pricing">Sınırsıza Geç</Link>
-                  </Button>
-                </CardContent>
-             </Card>
-          </section>
-        </div>
+                <div>
+                  <p className="text-sm font-medium">Mağaza Bağlı</p>
+                  <p className="text-[11px] text-muted-foreground">Veriler otomatik senkronize ediliyor</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={connectEtsy} className="gap-2">
+                <RefreshCw className="h-3.5 w-3.5" /> Yenile
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center py-8 space-y-4">
+              <div className="mx-auto h-12 w-12 rounded-xl bg-muted flex items-center justify-center">
+                <SettingsIcon className="h-5 w-5 text-muted-foreground/40" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Etsy mağazanız bağlı değil</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Siparişleri yönetmek için mağazanızı bağlayın.</p>
+              </div>
+              <Button onClick={connectEtsy} size="sm" className="gap-2">
+                <ExternalLink className="h-3.5 w-3.5" /> Etsy'yi Bağla
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Social Integrations */}
+      <Card className="rounded-xl border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <Megaphone className="h-3.5 w-3.5" /> Sosyal Medya
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-6 space-y-3">
+          {[
+            { name: "Instagram", color: "bg-gradient-to-tr from-pink-500 to-orange-400", icon: Megaphone },
+            { name: "Pinterest", color: "bg-red-500", icon: ImageIcon },
+          ].map((platform) => (
+            <div key={platform.name} className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className={`h-8 w-8 rounded-lg ${platform.color} flex items-center justify-center text-white`}>
+                  <platform.icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{platform.name}</p>
+                  <p className="text-[10px] text-muted-foreground">Bağlı değil</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => toast.info(`${platform.name} entegrasyonu yakında!`)}>
+                Bağla
+              </Button>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Plan */}
+      <Card className="rounded-xl border-border/60 shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+            <CreditCard className="h-3.5 w-3.5" /> Abonelik
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-6">
+          <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Crown className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">{profile?.plan || "FREE"} Plan</p>
+                <p className="text-[11px] text-muted-foreground">{profile?.credits || 0} AI kredisi kalan</p>
+              </div>
+            </div>
+            <Button asChild size="sm" variant="outline" className="gap-2">
+              <Link to="/pricing">Yükselt</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Logout */}
+      <div className="pt-4 border-t border-border/50">
+        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-2" onClick={() => signOut()}>
+          <LogOut className="h-3.5 w-3.5" /> Oturumu Kapat
+        </Button>
       </div>
     </div>
   );
