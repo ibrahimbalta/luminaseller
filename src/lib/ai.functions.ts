@@ -153,3 +153,22 @@ export const getUserDesigns = createServerFn({ method: "GET" })
     const { data: designs } = await getSupabase().from("designs").select("*").eq("user_id", data.userId).order("created_at", { ascending: false });
     return designs || [];
   });
+
+export const generateMarketingContent = createServerFn({ method: "POST" })
+  .inputValidator((d: { designId: string; platform: string }) => 
+    z.object({ designId: z.string(), platform: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    try {
+      const { data: design } = await getSupabase().from("designs").select("*").eq("id", data.designId).single();
+      const promptText = design ? design.prompt : "POD design";
+
+      const ai = await callAI({
+        systemPrompt: `You are a Viral Social Media Manager for ${data.platform}. Create an engaging, high-interaction post including emojis and trending hashtags.`,
+        messages: [{ role: "user", content: `Promote this design: ${promptText}` }]
+      });
+
+      return { content: ai.content.replace(/"/g, "") };
+    } catch (e) {
+      return { content: "Yeni tasarımımız yayında! Kaçırmayın. 🚀 #etsy #pod #design" };
+    }
+  });
