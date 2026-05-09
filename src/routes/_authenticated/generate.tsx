@@ -173,8 +173,8 @@ function GeneratePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Tasarım + Listing Üret</h1>
-        <p className="text-sm text-muted-foreground">Niş ve prompt gir, AI tasarım + SEO listing oluştursun.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">Tasarım Üret</h1>
+        <p className="text-sm text-muted-foreground mt-1">Niş ve prompt girin, AI tasarım ve SEO listing oluştursun.</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
